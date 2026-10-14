@@ -10,6 +10,7 @@ const SERVICE_FSAS = new Set((
   'V3R V3S V3T V3V V3W V3X V3Z V4A V4N V4P V4B V4C V4E V4G V4K V4L V4M ' + // Surrey, Delta, White Rock
   'V2Y V2Z V3A V1M V4W ' +                                                  // Langley
   'V3B V3C V3E V3H V3J V3K V5A V5B V5C V5E V5G V5H V5J V5K ' +             // Tri-Cities, Burnaby
+  'V3L V3M ' +                                                              // New Westminster
   'V2W V2X V4R ' +                                                          // Maple Ridge, Pitt Meadows
   'V5L V5M V5N V5P V5R V5S V5T V5V V5W V5X V5Y V5Z ' +                      // Vancouver east/south
   'V6A V6B V6C V6E V6G V6H V6J V6K V6L V6M V6N V6P V6R V6S V6T V6Z ' +      // Vancouver west

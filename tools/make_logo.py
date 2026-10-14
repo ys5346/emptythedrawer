@@ -139,7 +139,25 @@ def banner(W=1211, H=681):
     return f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {W} {H}" width="{W}" height="{H}">' + ''.join(parts) + '</svg>'
 
 
+def og_image(W=1200, H=630):
+    """Link-preview image (Open Graph / Twitter) for the website."""
+    import re
+    parts = [f'<rect width="{W}" height="{H}" fill="{INK}"/>']
+    lock = horizontal(PAPER, LIME, INK, height=40)
+    m = re.match(r'<svg[^>]*viewBox="0 0 ([\d.]+) 40"[^>]*>(.*)</svg>$', lock, re.S)
+    lw, inner = float(m.group(1)), m.group(2)
+    s = 1.6
+    parts.append(f'<g transform="translate(80 84) scale({s})">{inner}</g>')
+    y = 300
+    for line in ['Free electronics recycling', 'and pickup in Surrey, BC']:
+        p, _, _ = placed(line, 74, left=80, baseline=y, fill=PAPER, track=-0.025); parts.append(p)
+        y += 88
+    p, _, _ = placed('Drop box or doorstep pickup  ·  Every drive wiped  ·  100% free', 30, left=82, baseline=H - 92, fill=LIME, track=0); parts.append(p)
+    return f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {W} {H}" width="{W}" height="{H}">' + ''.join(parts) + '</svg>'
+
+
 files = {
+    'og-image.svg': og_image(),
     'whatsapp-cover.svg': banner(),
     'avatar-lime.svg': stacked(1080, LIME, INK, INK, LIME),
     'avatar-ink.svg': stacked(1080, INK, PAPER, LIME, INK),
