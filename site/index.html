@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Empty the Drawer — Give the old phone a second life</title>
+<meta name="description" content="Donate old laptops, phones and electronics in Surrey, BC. Free drop box or doorstep pickup — every drive wiped by ERA and refurbished for charities.">
+<link rel="icon" href="logo/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="logo/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<link rel="stylesheet" href="styles.css">
+<style>
+.leaflet-container{background:#E7E1D4;font-family:var(--plex)}
+.leaflet-control-attribution{font-size:9px;background:rgba(255,253,247,.8)}
+
+.hero{background:var(--ink);color:var(--paper)}
+.hero-grid{padding-top:96px;padding-bottom:84px;display:grid;grid-template-columns:1.08fr .92fr;gap:64px;align-items:center}
+.hero h1{font-family:var(--sg);font-weight:700;font-size:80px;line-height:.94;letter-spacing:-.04em;margin:24px 0 0;text-wrap:balance}
+.hero-lede{font-size:20px;line-height:1.55;color:rgba(244,239,228,.78);max-width:540px;margin:22px 0 0}
+.hero-ctas{display:flex;gap:13px;margin:34px 0 0;flex-wrap:wrap}
+.steps{list-style:none;margin:24px 0 0;padding:0;border-top:1px solid rgba(10,46,44,.12)}
+.steps li{display:grid;grid-template-columns:30px minmax(0,1fr);gap:14px;padding:16px 0;border-bottom:1px solid rgba(10,46,44,.12)}
+.steps b{width:30px;height:30px;border-radius:50%;background:var(--lime);display:flex;align-items:center;justify-content:center;font-family:var(--sg);font-weight:700;font-size:14px}
+.steps strong{display:block;font-family:var(--sg);font-weight:600;font-size:17px;letter-spacing:-.01em}
+.steps span{display:block;font-size:14.5px;line-height:1.5;color:rgba(10,46,44,.65);margin-top:2px}
+.pickup-cta{margin-top:auto;padding-top:28px;display:flex;flex-wrap:wrap;align-items:center;gap:14px 20px}
+.pickup-cta .btn{font-size:16.5px;padding:16px 26px}
+.pickup-cta p{margin:0;font-size:14.5px;color:rgba(10,46,44,.65)}
+.pickup-cta p a{text-decoration:underline;text-underline-offset:2px}
+.hero-note{font-size:16px;line-height:1.55;color:rgba(244,239,228,.7);margin:26px 0 0;max-width:540px}
+.hero-facts{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin:34px 0 0;max-width:560px}
+.fact{border-top:2px solid var(--lime);padding-top:12px}
+.fact-t{font-family:var(--sg);font-weight:600;font-size:17px}
+.fact-d{font-size:14.5px;line-height:1.5;color:rgba(244,239,228,.65);margin-top:4px}
+.hero-photo{aspect-ratio:4/5;border-radius:8px;background:repeating-linear-gradient(135deg,rgba(244,239,228,.09) 0 8px,rgba(244,239,228,.03) 8px 16px);border:1px solid rgba(244,239,228,.18);display:flex;align-items:flex-end;padding:22px}
+.hero-photo span{font-family:var(--sg);font-size:11.5px;color:rgba(244,239,228,.6);line-height:1.5}
+
+.sec-h2{font-family:var(--sg);font-weight:700;letter-spacing:-.035em;margin:0;line-height:1.03}
+.give{background:var(--paper);padding:96px 0 0}
+.give-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-top:32px;align-items:stretch}
+.opt{border-radius:12px;padding:34px 32px 36px;scroll-margin-top:100px}
+.opt h3{font-family:var(--sg);font-weight:700;font-size:32px;letter-spacing:-.03em;margin:12px 0 0;line-height:1.05}
+.opt > p{font-size:16.5px;line-height:1.6;color:rgba(10,46,44,.72);margin:10px 0 0}
+.addr-box{margin-top:24px;padding:22px;border-radius:10px;background:var(--paper);border:1px solid rgba(10,46,44,.1)}
+.hours{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:20px;padding-top:18px;border-top:1px solid rgba(10,46,44,.14)}
+.hours .eyebrow{color:rgba(10,46,44,.55);letter-spacing:.1em}
+.hours-t{font-family:var(--sg);font-weight:600;font-size:19px;margin-top:3px}
+.map{margin-top:20px;position:relative;aspect-ratio:16/10;border-radius:10px;overflow:hidden;border:1px solid rgba(10,46,44,.18);background:#E7E1D4}
+.map-label{position:absolute;left:12px;bottom:12px;z-index:500;background:var(--ink);color:var(--paper);border-radius:7px;padding:9px 13px;pointer-events:none}
+
+.items{background:var(--paper);padding:88px 0 0}
+.items-card{background:var(--cream);border:1px solid rgba(10,46,44,.13);border-radius:12px;padding:40px 40px 42px;display:grid;grid-template-columns:1fr 1fr;gap:48px;align-items:start}
+.items-card .tag{font-size:15px;padding:10px 16px}
+.dont{border-left:1px solid rgba(10,46,44,.13);padding-left:48px}
+.dont-row{padding:14px 0;border-bottom:1px solid rgba(10,46,44,.14);font-size:16px;line-height:1.5}
+.dont-row strong{font-weight:600}
+
+.where{background:var(--paper);padding:88px 0 0}
+.where-grid{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);gap:56px;align-items:start;border-top:1px solid rgba(10,46,44,.16);padding-top:36px}
+
+.faq{background:var(--paper);padding:88px 0 96px}
+.faq-grid{display:grid;grid-template-columns:minmax(0,.75fr) minmax(0,1.25fr);gap:56px;align-items:start;border-top:1px solid rgba(10,46,44,.16);padding-top:36px}
+.faq-list{border-top:1px solid rgba(10,46,44,.16)}
+.faq-list details{border-bottom:1px solid rgba(10,46,44,.16)}
+.faq-list summary{display:flex;justify-content:space-between;align-items:flex-start;gap:20px;padding:20px 0;cursor:pointer;list-style:none;font-family:var(--sg);font-weight:600;font-size:18.5px;letter-spacing:-.015em;line-height:1.35;color:rgba(10,46,44,.88)}
+.faq-list summary::-webkit-details-marker{display:none}
+.faq-list summary::after{content:"+";flex:none;font-size:22px;line-height:1;color:rgba(10,46,44,.45);transition:transform .22s cubic-bezier(.2,.7,.3,1)}
+.faq-list details[open] summary{color:var(--ink)}
+.faq-list details[open] summary::after{color:var(--ink);transform:rotate(45deg)}
+.faq-list p{font-size:16px;line-height:1.6;color:rgba(10,46,44,.72);margin:0;padding:0 44px 20px 0;max-width:620px}
+.faq-list a{font-weight:500;text-decoration:underline}
+
+.closer{background:var(--lime);color:var(--ink);padding:76px 0}
+.closer .wrap{display:flex;justify-content:space-between;align-items:center;gap:48px;flex-wrap:wrap}
+
+.partner{display:flex;justify-content:space-between;align-items:center;gap:20px;flex-wrap:wrap;margin-top:28px;padding:22px 24px;border-radius:12px;background:var(--cream);border:1px solid rgba(10,46,44,.13)}
+.partner-k{font-family:var(--sg);font-weight:600;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--olive)}
+.partner-t{font-family:var(--sg);font-weight:600;font-size:19px;letter-spacing:-.015em;margin-top:6px}
+.partner-d{font-size:15px;line-height:1.55;color:rgba(10,46,44,.68);margin-top:4px;max-width:440px}
+.partner-link{flex:none;font-family:var(--sg);font-weight:600;font-size:15px;padding:12px 18px;border-radius:999px;border:1px solid rgba(10,46,44,.3)}
+.partner-link:hover{border-color:var(--ink);opacity:1}
+.foot{background:var(--ink);color:rgba(244,239,228,.72);padding:64px 0 34px}
+.foot-grid{display:grid;grid-template-columns:1.3fr 1fr 1fr;gap:44px;padding-bottom:40px;border-bottom:1px solid rgba(244,239,228,.14)}
+.foot-col{display:flex;flex-direction:column;gap:12px}
+.foot-col a{color:var(--paper);font-family:var(--sg);font-weight:600;font-size:16px}
+.foot-col a:hover{color:var(--lime);opacity:1}
+.foot-contact{display:flex;flex-direction:column;gap:5px;margin-top:16px;font-family:var(--sg);font-size:12.5px;letter-spacing:.04em}
+.foot-contact a{color:rgba(244,239,228,.62)}
+.foot-contact a:hover{color:var(--lime);opacity:1}
+.foot-bar{padding-top:22px}
+
+@media (max-width:960px){
+  .hero-grid{grid-template-columns:minmax(0,1fr);gap:40px;padding-top:64px;padding-bottom:64px}
+  .hero h1{font-size:60px}
+  .hero-photo{aspect-ratio:16/9}
+  .give-grid,.items-card,.where-grid,.faq-grid{grid-template-columns:minmax(0,1fr)}
+  .where-grid,.faq-grid{gap:28px}
+  .dont{border-left:0;padding-left:0;border-top:1px solid rgba(10,46,44,.13);padding-top:32px}
+  .items-card{gap:32px}
+  .foot-grid{grid-template-columns:1fr 1fr}
+}
+@media (max-width:640px){
+  .hero-grid{padding-top:44px;padding-bottom:52px}
+  .hero h1{font-size:44px;margin-top:0}
+  .hero-lede{font-size:17.5px}
+  .hero-facts{grid-template-columns:minmax(0,1fr);gap:14px}
+  .give{padding-top:64px}
+  .give .sec-h2{font-size:36px!important}
+  .opt{padding:26px 18px 28px}
+  .opt h3{font-size:28px}
+  .hours{grid-template-columns:1fr 1fr}
+  .items{padding-top:56px}
+  .items-card{padding:28px 20px}
+  .items-card h2,.where h2,.faq h2{font-size:32px!important}
+  .where{padding:56px 0 0}
+  .faq{padding:56px 0 64px}
+  .faq-list p{padding-right:0}
+  .closer{padding:56px 0}
+  .closer h2{font-size:36px!important}
+  .foot-grid{grid-template-columns:minmax(0,1fr)}
+}
+</style>
+</head>
+<body>
+<div class="page">
+
+<header class="hdr">
+  <div class="wrap">
+    <a href="#top" class="brand"><img src="logo/logo-on-dark.svg" alt="Empty the Drawer" class="brand-logo"></a>
+    <span class="eyebrow era-tag">an <strong>ERA</strong> scholarship project</span>
+    <nav class="hdr-nav">
+      <a href="contact.html" class="nav-text">Contact us</a>
+      <a href="manage.html" class="nav-manage"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="5.5" width="16" height="14.5" rx="3"/><path d="M4 10h16M8.5 3.5v4M15.5 3.5v4"/></svg><span class="full">Manage booking</span><span class="short">Manage</span></a>
+      <a href="book.html" class="nav-cta"><span class="full">Book a free pickup</span><span class="short">Book</span></a>
+    </nav>
+  </div>
+</header>
+
+<section id="top" class="hero">
+  <div class="wrap hero-grid">
+    <div>
+      <h1>Empty the drawer.<br><span style="color:var(--lime)">Give the old phone a second life.</span></h1>
+      <p class="hero-lede">That laptop that's been in the closet since 2019 still has years left in it. We wipe it, ERA fixes it up, and it goes to a charity that needs one.</p>
+      <div class="hero-ctas">
+        <a href="book.html" class="btn btn-lime">Book a free pickup</a>
+        <a href="#dropbox" class="btn btn-ghost-light">Find the drop box</a>
+      </div>
+      <p class="hero-note">So far neighbours have handed over <strong style="color:var(--lime);font-weight:600">more than 550 lbs</strong> of old electronics through the drop box and the truck.</p>
+      <div class="hero-facts">
+        <div class="fact"><div class="fact-t">Data wiped</div><div class="fact-d">Every drive erased, or shredded if it can't be</div></div>
+        <div class="fact"><div class="fact-t">Completely free</div><div class="fact-d">Pickup, drop-off, shipping — nothing to pay</div></div>
+        <div class="fact"><div class="fact-t">Two minutes</div><div class="fact-d">About how long the form takes</div></div>
+      </div>
+    </div>
+    <div class="hero-photo" role="img" aria-label="Photo placeholder">
+      <span>photo — open drawer of old<br>phones, cables and chargers,<br>shot from above, warm light</span>
+    </div>
+  </div>
+</section>
+
+<section id="give" class="give">
+  <div class="wrap">
+    <div style="border-bottom:1px solid rgba(10,46,44,.16);padding-bottom:20px">
+      <h2 class="sec-h2" style="font-size:46px">Two ways to give</h2>
+    </div>
+    <div class="give-grid">
+
+      <div id="dropbox" class="opt" style="background:var(--cream);border:1px solid rgba(10,46,44,.13);display:flex;flex-direction:column">
+        <span class="kicker" style="color:rgba(10,46,44,.5)">Option A</span>
+        <h3>Use the drop box</h3>
+        <p>Walk up and drop it in. Nothing to fill out, nobody to wait for. The box stays locked and we empty it every evening.</p>
+        <div class="addr-box">
+          <div style="font-family:var(--sg);font-weight:600;font-size:20px;letter-spacing:-.015em">Surge Wholesale — loading bay</div>
+          <div style="font-size:15.5px;line-height:1.55;color:rgba(10,46,44,.7);margin-top:5px">13060 80 Ave #108, Surrey, BC V3W 3B2</div>
+          <div class="hours">
+            <div><div class="eyebrow">Mon – Fri</div><div class="hours-t">9am – 4pm</div></div>
+            <div><div class="eyebrow">Saturday</div><div class="hours-t">10am – 4pm</div></div>
+          </div>
+        </div>
+        <div class="map">
+          <div id="etd-map" style="position:absolute;inset:0"></div>
+          <div class="map-label eyebrow" style="letter-spacing:.1em">the drop box</div>
+        </div>
+        <a href="https://www.google.com/maps/dir/?api=1&destination=13060+80+Ave+%23108%2C+Surrey%2C+BC+V3W+3B2" target="_blank" rel="noopener" class="lime-link" style="margin-top:auto;padding-top:24px">Get directions →</a>
+      </div>
+
+      <div id="pickup" class="opt card" style="padding:34px 32px 36px;display:flex;flex-direction:column">
+        <span class="kicker" style="color:var(--olive)">Option B</span>
+        <h3>Ask for a pickup</h3>
+        <p>Too heavy to carry, too much to fit in a car, or no car at all? The truck is out four times a week. Book a slot and it comes to you.</p>
+        <ol class="steps">
+          <li><b>1</b><div><strong>Book in two minutes</strong><span>Tell us where you are and roughly what you've got.</span></div></li>
+          <li><b>2</b><div><strong>We confirm your day</strong><span>By email or text within one business day.</span></div></li>
+          <li><b>3</b><div><strong>Leave it by the door</strong><span>The driver collects it — you don't need to be home.</span></div></li>
+        </ol>
+        <div class="pickup-cta">
+          <a href="book.html" class="btn btn-ink">Book a free pickup</a>
+          <p>Already booked? <a href="manage.html">Manage it</a></p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<section id="items" class="items">
+  <div class="wrap">
+    <div class="items-card">
+      <div>
+        <h2 class="sec-h2" style="font-size:38px;line-height:1.05">What we can take</h2>
+        <p style="font-size:16.5px;line-height:1.6;color:rgba(10,46,44,.7);margin:12px 0 0">Broken is fine. Missing chargers, cracked screens, dead batteries — all of it still has parts worth saving.</p>
+        <div style="display:flex;flex-wrap:wrap;gap:9px;margin-top:22px">
+          <span class="tag">Laptops</span><span class="tag">Desktops</span><span class="tag">Phones</span><span class="tag">Tablets</span><span class="tag">Servers</span><span class="tag">Monitors</span><span class="tag">Networking gear</span><span class="tag">Gaming consoles</span><span class="tag">TVs</span>
+        </div>
+      </div>
+      <div class="dont">
+        <h3 style="font-family:var(--sg);font-weight:700;font-size:24px;letter-spacing:-.02em;margin:0">Please don't bring</h3>
+        <div style="margin-top:16px;border-top:1px solid rgba(10,46,44,.14)">
+          <div class="dont-row"><strong>No household or personal electronics</strong> — microwaves, kettles, vacuums, fans</div>
+          <div class="dont-row"><strong>No loose batteries</strong> or anything leaking, swollen or burnt</div>
+        </div>
+        <p style="font-size:15.5px;line-height:1.6;color:rgba(10,46,44,.62);margin:18px 0 0">Not sure about something? <a class="u" href="contact.html">Send us a photo</a> — we'll answer the same day, and point you to somewhere that does take it.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="where" class="where">
+  <div class="wrap where-grid">
+    <div>
+      <h2 class="sec-h2" style="font-size:42px">From your drawer to a student's desk</h2>
+    </div>
+    <div>
+      <p style="font-size:18.5px;line-height:1.6;color:rgba(10,46,44,.78);margin:0">Everything we collect goes straight to the <a href="https://www.era.ca/" target="_blank" rel="noopener" style="text-decoration:underline;text-underline-offset:3px">Electronic Recycling Association</a>. Their technicians and volunteers wipe it, fix what's fixable and load a clean operating system, and the finished machine is given to a charity, school or care home that asked for one. What's genuinely past saving gets broken down for parts and materials instead of going to landfill.</p>
+      <div class="partner">
+        <div>
+          <div class="partner-k">Our partner</div>
+          <div class="partner-t">Electronic Recycling Association (ERA)</div>
+          <div class="partner-d">A registered Canadian nonprofit that's been refurbishing and donating computers since 2004. Every device we collect goes to them.</div>
+        </div>
+        <a href="https://www.era.ca/" target="_blank" rel="noopener" class="partner-link">Visit era.ca ↗</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="faq" class="faq">
+  <div class="wrap faq-grid">
+    <div>
+      <span class="kicker" style="font-size:11.5px;color:rgba(10,46,44,.5)">questions</span>
+      <h2 class="sec-h2" style="font-size:42px;margin-top:14px">Before you<br>hand it over</h2>
+    </div>
+    <div class="faq-list">
+      <details name="faq" open><summary>Does any of this cost me anything?</summary><p>No. Pickups, drop-offs and shipping labels are all free — ERA funds the program through refurbished equipment sales, partnerships and donations.</p></details>
+      <details name="faq"><summary>Do I need to wipe my device first?</summary><p>No. ERA erases every drive with data destruction software, and physically shreds anything that can't be wiped. Just take out SIM cards, SD cards and anything else you want to keep.</p></details>
+      <details name="faq"><summary>What if it's broken, cracked or won't turn on?</summary><p>Still bring it. Dead batteries, smashed screens and missing chargers are all fine — technicians strip usable parts from anything they can't repair, and the rest is recycled for materials.</p></details>
+      <details name="faq"><summary>I only have one old laptop. Is that worth it?</summary><p>Yes. One working laptop is one student who starts the year with a computer, and one less device in landfill. There's no minimum.</p></details>
+      <details name="faq"><summary>Can I ask for physical destruction instead of a wipe?</summary><p>Yes. ERA offers on-site and off-site shredding on mobile hard-drive shredders. <a href="https://www.era.ca/data-security-destruction/" target="_blank" rel="noopener">Contact ERA for hard drive shredders</a></p></details>
+    </div>
+  </div>
+</section>
+
+<section class="closer">
+  <div class="wrap">
+    <div>
+      <h2 class="sec-h2" style="font-size:46px;letter-spacing:-.04em;line-height:1">Go check the drawer.</h2>
+      <p style="font-size:18px;line-height:1.55;color:rgba(10,46,44,.75);margin:12px 0 0;max-width:480px">Booking a pickup takes about two minutes.</p>
+    </div>
+    <div style="display:flex;gap:13px;flex-wrap:wrap">
+      <a href="book.html" class="btn btn-ink">Book a free pickup</a>
+    </div>
+  </div>
+</section>
+
+<footer class="foot">
+  <div class="wrap">
+    <div class="foot-grid">
+      <div>
+        <img src="logo/logo-on-dark.svg" alt="Empty the Drawer" style="height:30px;width:auto;display:block">
+        <p style="font-size:15px;line-height:1.6;margin:16px 0 0;max-width:320px">In partnership with the <a href="https://www.era.ca/" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline;text-underline-offset:2px">Electronic Recycling Association</a>, a registered Canadian nonprofit operating since 2004.</p>
+        <div class="foot-contact">
+          <a href="mailto:donations@emptythedrawer.org">donations@emptythedrawer.org</a>
+          <a href="tel:+16049539883">(604) 953-9883</a>
+        </div>
+      </div>
+      <div class="foot-col">
+        <span class="kicker" style="color:rgba(244,239,228,.45);font-size:11px;letter-spacing:.12em">Follow the drive</span>
+        <a href="https://www.tiktok.com/@emptythedrawer" target="_blank" rel="noopener">TikTok — @emptythedrawer</a>
+        <a href="https://www.instagram.com/emptythedrawer" target="_blank" rel="noopener">Instagram — @emptythedrawer</a>
+      </div>
+    </div>
+    <div class="foot-bar">
+      <span>© 2026 Empty the Drawer · Vancouver</span>
+      <div class="foot-links"><a href="book.html">Book a pickup</a><a href="manage.html">Manage a booking</a><a href="#dropbox">Find the drop box</a><a href="contact.html">Contact us</a></div>
+    </div>
+  </div>
+</footer>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+// Drop box map
+(() => {
+  const el = document.getElementById('etd-map');
+  if (!window.L || !el) return;
+  const at = [49.1480043, -122.8602604]; // 13060 80 Ave #108, Surrey, BC V3W 3B2 (OpenStreetMap)
+  const map = L.map(el, { scrollWheelZoom: false }).setView(at, 16);
+  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19,
+    attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+  }).addTo(map);
+  map.getPane('tilePane').style.filter = 'grayscale(.75) sepia(.12) contrast(.95) brightness(1.04)';
+  L.marker(at, {
+    icon: L.divIcon({
+      className: '', iconSize: [26, 26], iconAnchor: [13, 13],
+      html: '<div style="width:26px;height:26px;border-radius:50%;background:#D8F14A;border:3px solid #0A2E2C;box-shadow:0 2px 8px rgba(0,0,0,.35)"></div>'
+    })
+  }).addTo(map).bindPopup('Empty the Drawer box — Surge Wholesale loading bay, 13060 80 Ave #108');
+  L.circle(at, { radius: 90, color: '#0A2E2C', weight: 1, fillColor: '#D8F14A', fillOpacity: 0.12 }).addTo(map);
+})();
+
+</script>
+</body>
+</html>

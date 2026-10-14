@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Contact Us — Empty the Drawer</title>
+<meta name="description" content="Not sure if we take it? Call, email or WhatsApp Empty the Drawer — a real person answers.">
+<link rel="icon" href="logo/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="logo/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+<style>
+.contact .subhero .wrap{padding-top:60px;padding-bottom:52px}
+.contact .subhero h1{font-size:58px;max-width:720px}
+.contact .subhero p{max-width:580px;margin-top:16px}
+.ways{background:var(--paper);padding:52px 0 96px}
+.ways-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:16px}
+.way{background:var(--cream);border:1px solid rgba(10,46,44,.13);border-radius:12px;padding:26px;display:flex;flex-direction:column;gap:8px;min-height:190px;transition:border-color .15s ease}
+.way:hover{border-color:var(--ink);opacity:1}
+.way .eyebrow{color:rgba(10,46,44,.6)}
+.way-main{font-family:var(--sg);font-weight:700;font-size:24px;letter-spacing:-.025em;overflow-wrap:anywhere}
+.way-sub{font-size:14.5px;line-height:1.5;color:rgba(10,46,44,.68)}
+.way-arrow{margin-top:auto;padding-top:10px;font-family:var(--sg);font-weight:700;font-size:20px}
+.ready-band{background:var(--ink);color:var(--paper);border-radius:12px;padding:24px 26px;display:flex;justify-content:space-between;align-items:center;gap:20px;flex-wrap:wrap;margin-top:16px}
+@media (max-width:640px){
+  .contact .subhero h1{font-size:40px}
+  .ways{padding:32px 0 64px}
+}
+</style>
+</head>
+<body class="contact">
+<div class="page">
+
+<header class="hdr">
+  <div class="wrap">
+    <a href="index.html" class="brand"><img src="logo/logo-on-dark.svg" alt="Empty the Drawer" class="brand-logo"></a>
+    <span class="eyebrow era-tag">an <strong>ERA</strong> scholarship project</span>
+    <nav class="hdr-nav">
+      <a href="manage.html" class="nav-manage"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="5.5" width="16" height="14.5" rx="3"/><path d="M4 10h16M8.5 3.5v4M15.5 3.5v4"/></svg><span class="full">Manage booking</span><span class="short">Manage</span></a>
+      <a href="book.html" class="nav-cta"><span class="full">Book a free pickup</span><span class="short">Book</span></a>
+      <a href="index.html" class="nav-back">← Back to the site</a>
+    </nav>
+  </div>
+</header>
+
+<section class="subhero">
+  <div class="wrap">
+    <span class="kicker" style="color:var(--lime)">talk to a human</span>
+    <h1>Not sure if we take it? Just ask.</h1>
+    <p>Call, email or WhatsApp — whichever suits you. A real person answers.</p>
+  </div>
+</section>
+
+<section class="ways">
+  <div class="wrap">
+    <div class="ways-grid">
+      <a class="way" href="tel:+16049539883">
+        <span class="eyebrow">phone</span>
+        <div class="way-main">(604) 953-9883</div>
+        <div class="way-sub">Mon–Sun, 9am – 6pm PT. Leave a voicemail after hours and we'll call back the same day.</div>
+        <span class="way-arrow" aria-hidden="true">→</span>
+      </a>
+      <a class="way" href="mailto:donations@emptythedrawer.org?subject=Donating%20devices">
+        <span class="eyebrow">email</span>
+        <div class="way-main">donations@emptythedrawer.org</div>
+        <div class="way-sub">Email us with any inquiries and we reply within one business day.</div>
+        <span class="way-arrow" aria-hidden="true">→</span>
+      </a>
+      <a class="way" href="https://wa.me/16049539883?text=Hi%20Empty%20the%20Drawer%20%E2%80%94%20I%20have%20some%20old%20devices%20to%20donate" target="_blank" rel="noopener">
+        <span class="eyebrow">whatsapp</span>
+        <div class="way-main">Message us a photo</div>
+        <div class="way-sub">Not sure we take something? Send a picture and we'll let you know.</div>
+        <span class="way-arrow" aria-hidden="true">→</span>
+      </a>
+    </div>
+    <div class="ready-band">
+      <div>
+        <div style="font-family:var(--sg);font-weight:600;font-size:19px;letter-spacing:-.015em">Ready to donate?</div>
+        <div style="font-size:14.5px;line-height:1.5;color:rgba(244,239,228,.72);margin-top:4px">Skip the questions and book the truck — it takes two minutes. Already booked? <a href="manage.html" style="color:var(--lime);text-decoration:underline">Manage your booking</a>.</div>
+      </div>
+      <a href="book.html" class="nav-cta" style="font-size:15.5px;padding:14px 22px">Book a free pickup</a>
+    </div>
+  </div>
+</section>
+
+<footer class="foot-simple">
+  <div class="wrap">
+    <span>© 2026 Empty the Drawer · In partnership with ERA</span>
+    <div class="foot-links"><a href="index.html">Home</a><a href="index.html#faq">Questions</a><a href="book.html">Book a pickup</a><a href="manage.html">Manage a booking</a></div>
+  </div>
+</footer>
+</div>
+</body>
+</html>

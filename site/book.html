@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Book a Pickup — Empty the Drawer</title>
+<meta name="description" content="Book a free doorstep pickup for old laptops, phones and electronics within 90 km of Surrey, BC.">
+<link rel="icon" href="logo/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="logo/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+<style>
+.book{min-height:calc(100vh - 74px);padding:56px 16px 80px}
+.book-col{max-width:620px;margin:0 auto}
+.book-head{text-align:center;margin-bottom:28px}
+.book-head h1{font-family:var(--sg);font-weight:700;font-size:40px;line-height:1.05;letter-spacing:-.035em;margin:0}
+.book-head p{font-size:16.5px;line-height:1.55;color:rgba(10,46,44,.66);margin:10px 0 0}
+.book .card{padding:34px 32px 0;overflow:hidden}
+.card-foot{margin:12px -32px 0;padding:14px 32px}
+.book-after{text-align:center;font-size:14.5px;line-height:1.6;color:rgba(10,46,44,.62);margin:24px 0 0}
+.book-after a{text-decoration:underline;text-underline-offset:2px}
+.nav-exit{display:inline-flex;align-items:center;gap:7px;color:rgba(244,239,228,.78);font-family:var(--sg);font-weight:600;font-size:14.5px;padding:10px 4px}
+.nav-exit:hover{color:var(--lime);opacity:1}
+@media (max-width:640px){
+  .book{padding:28px 16px 56px}
+  .book-head h1{font-size:30px}
+  .book-head p{font-size:15.5px}
+  .book .card{padding:26px 18px 0}
+  .card-foot{margin:12px -18px 0;padding:14px 18px}
+  .nav-exit{font-size:13.5px}
+}
+</style>
+</head>
+<body>
+<div class="page">
+
+<header class="hdr">
+  <div class="wrap">
+    <a href="index.html" class="brand"><img src="logo/logo-on-dark.svg" alt="Empty the Drawer" class="brand-logo"></a>
+    <nav class="hdr-nav">
+      <a href="index.html" class="nav-exit" aria-label="Close and go back to the site">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M7 7l10 10M17 7L7 17"/></svg>Close
+      </a>
+    </nav>
+  </div>
+</header>
+
+<main class="book">
+  <div class="book-col">
+    <div class="book-head">
+      <h1>Book a free pickup</h1>
+      <p>Four quick questions — about two minutes. No account, no cost.</p>
+    </div>
+    <div class="card" id="booking"></div>
+    <p class="book-after">Already booked? <a href="manage.html">Manage your booking</a></p>
+  </div>
+</main>
+</div>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/htm@3.1.1/dist/htm.umd.js"></script>
+<script src="common.js"></script>
+<script src="booking.js"></script>
+<script>
+mountBooking(document.getElementById('booking'), { home: 'index.html' });
+</script>
+</body>
+</html>

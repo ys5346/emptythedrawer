@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Manage Your Booking — Empty the Drawer</title>
+<meta name="description" content="Cancel, reschedule or change your Empty the Drawer pickup with your confirmation number.">
+<link rel="icon" href="logo/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="logo/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+<style>
+:root{
+  --sys:-apple-system,BlinkMacSystemFont,"SF Pro Text","SF Pro Display","Helvetica Neue",Helvetica,Arial,sans-serif;
+  --label:#1d1d1f; --label-2:#6e6e73; --label-3:#86868b;
+  --sep:rgba(10,46,44,.1); --fill:#fff; --bg:var(--paper);
+}
+body{background:var(--bg)}
+.mg{font-family:var(--sys);color:var(--label);-webkit-font-smoothing:antialiased;min-height:calc(100vh - 74px - 112px);padding:72px 16px 96px}
+.mg-col{max-width:520px;margin:0 auto}
+
+.intro{text-align:center}
+.title{font-family:var(--sys);font-weight:700;font-size:44px;line-height:1.08;letter-spacing:-.022em;margin:0;color:var(--label)}
+.subtitle{font-size:19px;line-height:1.42;letter-spacing:-.01em;color:var(--label-2);margin:12px auto 0;max-width:420px}
+
+/* code boxes */
+.code{position:relative;display:flex;justify-content:center;gap:10px;margin:40px auto 0;cursor:text;width:max-content}
+.code-box{width:58px;height:70px;border-radius:14px;background:var(--fill);box-shadow:0 0 0 1px var(--sep),0 1px 2px rgba(0,0,0,.04);display:flex;align-items:center;justify-content:center;font-family:var(--sys);font-size:30px;font-weight:600;letter-spacing:0;color:var(--label);transition:box-shadow .2s ease,transform .2s ease}
+.code-box.filled{box-shadow:0 0 0 1px rgba(0,0,0,.14),0 1px 2px rgba(0,0,0,.04)}
+.code-box.active{box-shadow:0 0 0 2px var(--ink),0 0 0 6px rgba(10,46,44,.1)}
+.code-box.active:empty::after{content:"";width:2px;height:30px;background:var(--ink);border-radius:1px;animation:caret 1s steps(1) infinite}
+.code.bad .code-box{box-shadow:0 0 0 1.5px #d70015;animation:shake .4s ease}
+.code-input{position:absolute;inset:0;width:100%;opacity:0;border:0;font-size:16px;color:transparent;background:transparent;caret-color:transparent;cursor:text}
+.code-help{text-align:center;font-size:14px;line-height:1.45;color:var(--label-3);margin:14px 0 0;min-height:20px}
+.code-help.bad{color:#d70015}
+@keyframes caret{50%{opacity:0}}
+@keyframes shake{20%,60%{transform:translateX(-4px)}40%,80%{transform:translateX(4px)}}
+
+/* grouped lists */
+.reveal{animation:rise .42s cubic-bezier(.2,.8,.2,1) both}
+@keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.group{margin-top:36px}
+.group-title{display:flex;justify-content:space-between;align-items:baseline;font-size:13px;font-weight:600;letter-spacing:.01em;text-transform:uppercase;color:var(--label-3);padding:0 18px 8px}
+.group-title span{text-transform:none;font-weight:400;letter-spacing:0}
+.group-body{background:var(--fill);border-radius:16px;overflow:hidden;box-shadow:0 0 0 1px var(--sep),0 1px 3px rgba(0,0,0,.03)}
+.row{display:flex;align-items:center;gap:14px;width:100%;padding:14px 18px;background:transparent;border:0;text-align:left;font:inherit;color:inherit;cursor:pointer;position:relative;transition:background .15s ease}
+.row + .row::before{content:"";position:absolute;top:0;right:0;left:18px;height:1px;background:var(--sep)}
+.row:has(.row-icon) + .row::before{left:64px}
+.row:hover{background:rgba(0,0,0,.025)}
+.row:active{background:rgba(0,0,0,.05)}
+.row.static{cursor:default}
+.row.static:hover{background:transparent}
+.row.compact{padding-top:13px;padding-bottom:13px}
+.row-icon{flex:none;width:32px;height:32px;border-radius:9px;display:flex;align-items:center;justify-content:center;color:#fff}
+.row-text{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.row-label{font-size:17px;line-height:1.3;letter-spacing:-.015em;color:var(--label)}
+.row-sub{font-size:14px;line-height:1.35;color:var(--label-2)}
+.row-check{flex:none;width:22px;height:22px;color:var(--ink);display:flex;align-items:center;justify-content:center}
+.row-check svg{animation:pop .25s cubic-bezier(.2,.9,.3,1.4) both}
+@keyframes pop{from{transform:scale(.4);opacity:0}to{transform:none;opacity:1}}
+.row:focus-visible,.btn-primary:focus-visible,.btn-plain:focus-visible{outline:2px solid var(--ink);outline-offset:-2px}
+.note{display:block;width:100%;border:0;outline:0;resize:vertical;padding:14px 18px;font-family:var(--sys);font-size:17px;line-height:1.4;letter-spacing:-.015em;color:var(--label);background:transparent;min-height:96px}
+.note::placeholder{color:#a1a1a6}
+
+/* buttons */
+.btn-primary{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;margin-top:36px;padding:16px 22px;border:0;border-radius:14px;background:var(--ink);color:#fff;font-family:var(--sys);font-size:17px;font-weight:600;letter-spacing:-.01em;cursor:pointer;transition:transform .15s ease,opacity .2s ease,background .2s ease}
+.btn-primary:hover{color:#fff;opacity:.92}
+.btn-primary:active{transform:scale(.985)}
+.btn-primary.destructive{background:#d70015}
+.btn-primary:disabled{background:rgba(0,0,0,.08);color:rgba(0,0,0,.3);cursor:not-allowed;transform:none;opacity:1}
+.btn-plain{display:block;margin:14px auto 0;background:none;border:0;font-family:var(--sys);font-size:16px;color:var(--olive);cursor:pointer;padding:8px}
+.btn-plain:hover{text-decoration:underline}
+.spinner{width:16px;height:16px;border-radius:50%;border:2px solid rgba(0,0,0,.18);border-top-color:rgba(0,0,0,.5);animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.send-err{text-align:center;font-size:14px;color:#d70015;margin:12px 0 0}
+.honey{position:absolute;left:-9999px;width:1px;height:1px;opacity:0}
+
+/* done */
+.done{text-align:center;animation:rise .5s cubic-bezier(.2,.8,.2,1) both}
+.done-mark{width:72px;height:72px;margin:0 auto 26px;border-radius:50%;background:var(--lime);color:var(--ink);display:flex;align-items:center;justify-content:center}
+.done-mark svg{width:34px;height:34px;animation:pop .45s .1s cubic-bezier(.2,.9,.3,1.4) both}
+.done-code{display:inline-flex;align-items:baseline;gap:10px;margin-top:28px;padding:12px 20px;border-radius:12px;background:var(--fill);box-shadow:0 0 0 1px var(--sep)}
+.done-code span{font-size:14px;color:var(--label-2)}
+.done-code strong{font-size:22px;letter-spacing:.1em}
+.done .btn-primary{text-decoration:none}
+
+.mg-foot{margin:56px auto 0;max-width:520px;text-align:center;font-size:14px;line-height:1.6;color:var(--label-3)}
+.mg-foot a{color:var(--label-2);text-decoration:underline;text-underline-offset:2px}
+
+@media (max-width:640px){
+  .mg{padding:44px 16px 72px}
+  .title{font-size:34px}
+  .subtitle{font-size:17px}
+  .code{gap:8px;margin-top:32px}
+  .code-box{width:52px;height:62px;font-size:26px;border-radius:12px}
+}
+@media (max-width:340px){
+  .code-box{width:46px;height:56px}
+}
+@media (prefers-reduced-motion:reduce){.code-box.active:empty::after{animation:none}}
+</style>
+</head>
+<body>
+<div class="page">
+
+<header class="hdr">
+  <div class="wrap">
+    <a href="index.html" class="brand"><img src="logo/logo-on-dark.svg" alt="Empty the Drawer" class="brand-logo"></a>
+    <span class="eyebrow era-tag">an <strong>ERA</strong> scholarship project</span>
+    <nav class="hdr-nav">
+      <a href="book.html" class="nav-cta"><span class="full">Book a free pickup</span><span class="short">Book</span></a>
+      <a href="index.html" class="nav-back">← Back to the site</a>
+    </nav>
+  </div>
+</header>
+
+<main class="mg">
+  <div class="mg-col" id="manage"></div>
+  <p class="mg-foot">Truck coming today? Call <a href="tel:+16049539883">(604) 953-9883</a>.<br>Lost your confirmation number? <a href="contact.html">Contact us</a>.</p>
+</main>
+
+<footer class="foot-simple">
+  <div class="wrap">
+    <span>© 2026 Empty the Drawer · In partnership with ERA</span>
+    <div class="foot-links"><a href="index.html">Home</a><a href="book.html">Book a pickup</a><a href="contact.html">Contact us</a></div>
+  </div>
+</footer>
+</div>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/htm@3.1.1/dist/htm.umd.js"></script>
+<script src="common.js"></script>
+<script src="manage.js"></script>
+<script>
+mountManage(document.getElementById('manage'), { code: new URLSearchParams(location.search).get('code') || '' });
+</script>
+</body>
+</html>
