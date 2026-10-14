@@ -14,11 +14,14 @@
  *   4. Put that URL in CONFIRM_URL at the top of site/common.js.
  *
  * Emails are sent from the Google account that deploys this (Gmail allows about
- * 100 a day on a personal account).
+ * 100 a day on a personal account). To send as donations@emptythedrawer.org
+ * instead, add it in that Gmail under Settings → Accounts → "Send mail as"
+ * first, then set CONFIG.fromAddress below.
  */
 
 const CONFIG = {
   fromName: 'Empty the Drawer',
+  fromAddress: '',                // a verified "Send mail as" address, e.g. 'donations@emptythedrawer.org'
   replyTo: '',                    // e.g. 'donations@emptythedrawer.org' once that inbox works
   phone: '(604) 953-9883',
   sheetTab: 'Bookings',
@@ -128,7 +131,11 @@ Empty the Drawer`;
 
   const opts = { name: CONFIG.fromName, htmlBody };
   if (CONFIG.replyTo) opts.replyTo = CONFIG.replyTo;
-  MailApp.sendEmail(b.email, subject, text, opts);
+  if (CONFIG.fromAddress) {
+    GmailApp.sendEmail(b.email, subject, text, { ...opts, from: CONFIG.fromAddress });
+  } else {
+    MailApp.sendEmail(b.email, subject, text, opts);
+  }
 }
 
 function clip_(v, n) { return String(v == null ? '' : v).slice(0, n).trim(); }
