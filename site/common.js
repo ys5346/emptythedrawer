@@ -1,8 +1,9 @@
 // Shared by the booking form and the manage-booking page.
 window.ETD = (() => {
   // Where bookings and change requests are emailed, via FormSubmit (https://formsubmit.co).
-  // The first message to a new address sends a one-time "Activate form" email there.
-  const INBOX = 'emptythedrawer@gmail.com';
+  // This is FormSubmit's alias for emptythedrawer@gmail.com (activated), so the
+  // address itself isn't exposed to bots scraping form endpoints.
+  const INBOX = 'ad729216847b814c6cdb643755980a7f';
 
   // Google Apps Script web app that emails customers their confirmation and logs
   // each booking to a Google Sheet (see tools/booking-confirmation.gs). Empty = off.
