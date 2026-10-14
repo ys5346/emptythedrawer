@@ -1,11 +1,8 @@
 // Shared by the booking form and the manage-booking page.
 window.ETD = (() => {
   // Where bookings and change requests are emailed, via FormSubmit (https://formsubmit.co).
-  // This is FormSubmit's private alias for the destination inbox, so the real
-  // address never appears in the site's code.
-  // TODO before launch: activate FormSubmit for donations@emptythedrawer.org and
-  // put the alias it gives you here (this one is the testing inbox).
-  const INBOX = 'f94d777b22562545705cd0840f8aa800';
+  // The first message to a new address sends a one-time "Activate form" email there.
+  const INBOX = 'emptythedrawer@gmail.com';
 
   // Google Apps Script web app that emails customers their confirmation and logs
   // each booking to a Google Sheet (see tools/booking-confirmation.gs). Empty = off.

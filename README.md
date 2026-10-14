@@ -12,7 +12,7 @@ Live at https://emptythedrawer.org
 
 ## Settings to check before launch
 
-- `site/common.js` → `INBOX`: FormSubmit alias for the inbox that receives bookings.
+- `site/common.js` → `INBOX`: the inbox that receives bookings (emptythedrawer@gmail.com).
 - `site/common.js` → `CONFIRM_URL`: web-app URL of the deployed confirmation script (empty = off).
 
 ## Preview locally
