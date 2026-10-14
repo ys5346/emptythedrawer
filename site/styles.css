@@ -32,7 +32,7 @@ a:hover{color:var(--ink);opacity:.72}
 .hdr{position:sticky;top:0;z-index:1200;background:var(--ink);border-bottom:1px solid rgba(216,241,74,.18)}
 .hdr .wrap{height:74px;display:flex;align-items:center;gap:20px}
 .brand{display:flex;align-items:center;gap:11px;flex:none}
-.brand-logo{display:block;height:30px;width:auto}
+.brand-logo,.foot-logo{display:block;height:30px;width:182px}
 .era-tag{display:flex;align-items:center;gap:7px;padding-left:18px;border-left:1px solid rgba(244,239,228,.2);color:rgba(244,239,228,.55)}
 .era-tag strong{color:var(--paper);letter-spacing:.06em}
 .hdr-nav{display:flex;gap:10px;margin-left:auto;align-items:center}
@@ -99,7 +99,7 @@ textarea.inp{font-size:15px;line-height:1.5;resize:vertical}
   .hdr-nav .full{display:none}
   .hdr-nav .short{display:inline}
   .hdr-nav{gap:8px}
-  .brand-logo{height:27px}
+  .brand-logo{height:27px;width:164px}
   .subhero .wrap{padding-top:44px;padding-bottom:40px}
   .subhero h1{font-size:40px}
   .subhero p{font-size:17px}
@@ -108,12 +108,12 @@ textarea.inp{font-size:15px;line-height:1.5;resize:vertical}
   .btn{font-size:16px;padding:15px 22px}
 }
 @media (max-width:400px){
-  .brand-logo{height:24px}
+  .brand-logo{height:24px;width:146px}
   .nav-cta,.nav-manage{padding:8px 10px;font-size:13px}
   .nav-manage svg{display:none}
 }
 @media (max-width:350px){
   .hdr .wrap{gap:8px}
-  .brand-logo{height:21px}
+  .brand-logo{height:21px;width:127px}
   .hdr-nav{gap:6px}
 }
