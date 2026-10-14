@@ -7,7 +7,7 @@ window.ETD = (() => {
 
   // Google Apps Script web app that emails customers their confirmation and logs
   // each booking to a Google Sheet (see tools/booking-confirmation.gs). Empty = off.
-  const CONFIRM_URL = '';
+  const CONFIRM_URL = 'https://script.google.com/macros/s/AKfycbybYDqPku8HkKxYtUy3v-nw0T3ZBygCDlBZJ6hG_BrTaUv6BLHD7-LAVzE3a5O1bYn8KQ/exec';
 
   // Fire-and-forget: a failed confirmation email must never block a booking.
   function confirm(booking) {
