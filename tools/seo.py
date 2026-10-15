@@ -25,7 +25,7 @@ ORG = {
                    "Association (ERA), which wipes or shreds every drive, refurbishes what it can for charities and "
                    "schools, and recycles the rest.",
     "telephone": "+1-604-953-9883",
-    "email": "emptythedrawer@gmail.com",
+    "email": "donations@emptythedrawer.org",
     "priceRange": "Free",
     "address": {"@type": "PostalAddress", "streetAddress": "13060 80 Ave #108", "addressLocality": "Surrey",
                 "addressRegion": "BC", "postalCode": "V3W 3B2", "addressCountry": "CA"},
@@ -84,7 +84,7 @@ def structured(name, page):
                  "offers": {"@type": "Offer", "price": "0", "priceCurrency": "CAD"}, "url": BASE + "book.html"}]
     if name == 'contact.html':
         return [{"@type": "ContactPage", "url": BASE + "contact.html", "name": "Contact Empty the Drawer",
-                 "about": {**org_ref, "telephone": "+1-604-953-9883", "email": "emptythedrawer@gmail.com"}}]
+                 "about": {**org_ref, "telephone": "+1-604-953-9883", "email": "donations@emptythedrawer.org"}}]
     return None
 
 

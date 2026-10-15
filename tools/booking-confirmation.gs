@@ -13,13 +13,15 @@
  *      Click Deploy, allow the permissions, copy the Web app URL.
  *   4. Put that URL in CONFIRM_URL at the top of site/common.js.
  *
- * Deploy it while signed in as emptythedrawer@gmail.com, so confirmations come
- * from that address and replies land in the project inbox (Gmail allows about
- * 100 emails a day).
+ * Deploy it while signed in as emptythedrawer@gmail.com. Confirmations are sent
+ * as donations@emptythedrawer.org once that address is added in this Gmail under
+ * Settings → Accounts → "Send mail as"; until then they come from the Gmail
+ * address with replies going to donations@. Gmail allows about 100 a day.
  */
 
 const CONFIG = {
   fromName: 'Empty the Drawer',
+  fromAddress: 'donations@emptythedrawer.org',
   phone: '(604) 953-9883',
   sheetTab: 'Bookings',
 };
@@ -126,7 +128,12 @@ Empty the Drawer`;
   </div>
 </div>`;
 
-  MailApp.sendEmail(b.email, subject, text, { name: CONFIG.fromName, htmlBody });
+  const opts = { name: CONFIG.fromName, htmlBody, replyTo: CONFIG.fromAddress };
+  if (GmailApp.getAliases().indexOf(CONFIG.fromAddress) !== -1) {
+    GmailApp.sendEmail(b.email, subject, text, { ...opts, from: CONFIG.fromAddress });
+  } else {
+    MailApp.sendEmail(b.email, subject, text, opts);
+  }
 }
 
 function clip_(v, n) { return String(v == null ? '' : v).slice(0, n).trim(); }
