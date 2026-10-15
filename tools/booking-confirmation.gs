@@ -11,8 +11,10 @@
  *                              request on the booking's row.
  *   4. Crew app     (POST type=crew + passcode) → lists every pickup with full
  *                              details and updates status, pickup date and crew notes
- *                              for the crew app at emptythedrawer.org/crew/. Customers
- *                              get an email when their pickup is scheduled and picked up.
+ *                              for the ETD Crew iPhone app. Customers get an email when
+ *                              their pickup is scheduled and picked up. When marking a
+ *                              pickup done, the crew can record how many items were
+ *                              collected and a photo, saved to a private Drive folder.
  *
  * The crew passcode lives in Project Settings → Script properties → CREW_PASSCODE.
  * `setup` creates one the first time and prints it in the log.
@@ -48,7 +50,7 @@ const CONFIG = {
   notifyCustomers: true,          // email customers when a pickup is scheduled and when it's picked up
 };
 
-const VERSION = '2026-10-14g';
+const VERSION = '2026-10-14h';
 
 const CODE_RE = /^[A-HJ-NP-Z]{2}\d{2}[A-HJ-NP-Z]$/;
 const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[a-z]{2,}$/i;
@@ -58,8 +60,9 @@ const COL = {
   bookedAt: 'Booked at', code: 'Code', status: 'Status', pickupDate: 'Pickup date',
   name: 'Name', email: 'Email', phone: 'Mobile', address: 'Address', load: 'Load',
   notes: 'Driver notes', requests: 'Customer requests', crewNotes: 'Crew notes',
+  itemCount: 'Items collected', photo: 'Pickup photo',
 };
-const HEADERS = ['bookedAt', 'code', 'status', 'pickupDate', 'name', 'email', 'phone', 'address', 'load', 'notes', 'requests', 'crewNotes'];
+const HEADERS = ['bookedAt', 'code', 'status', 'pickupDate', 'name', 'email', 'phone', 'address', 'load', 'notes', 'requests', 'crewNotes', 'itemCount', 'photo'];
 const STATUS_KEYS = { new: 'New', scheduled: 'Scheduled', on_the_way: 'On the way', picked_up: 'Picked up', recycled: 'Recycled', cancelled: 'Cancelled' };
 const STATUSES = ['New', 'Scheduled', 'On the way', 'Picked up', 'Recycled', 'Cancelled'];
 
@@ -252,6 +255,8 @@ function crewList_() {
       notes: String(get('notes') || ''),
       requests: String(get('requests') || ''),
       crewNotes: String(get('crewNotes') || ''),
+      itemCount: Number(get('itemCount')) > 0 ? Number(get('itemCount')) : null,
+      photoUrl: String(get('photo') || ''),
     };
   }).filter(b => CODE_RE.test(b.code)).reverse();
 }
@@ -289,6 +294,19 @@ function crewUpdate_(code, set) {
     if (set.status === 'on_the_way' && beforeStatus !== 'on_the_way') notify = 'on_the_way';
     if (set.status !== 'scheduled' && notify === 'scheduled') notify = null;
   }
+  if (set.itemCount !== undefined) {
+    const n = parseInt(set.itemCount, 10);
+    const cell = sh.getRange(r, c.itemCount);
+    if (n > 0 && n < 1000) cell.setValue(n); else cell.clearContent();
+  }
+  if (set.photo) {
+    try {
+      const bytes = Utilities.base64Decode(String(set.photo).slice(0, 8000000));
+      const file = photoFolder_().createFile(
+        Utilities.newBlob(bytes, 'image/jpeg', `${code} ${fmt_(new Date(), 'yyyy-MM-dd HHmm')}.jpg`));
+      sh.getRange(r, c.photo).setValue(file.getUrl());
+    } catch (err) { recordError_('photo', err); }
+  }
   if (set.crewNote) {
     const cell = sh.getRange(r, c.crewNotes);
     const prev = String(cell.getValue() || '');
@@ -311,6 +329,7 @@ function crewUpdate_(code, set) {
         sendStatusEmail_({
           code, name, email: String(get('email')),
           pickupLabel: day ? fmt_(new Date(day[0], day[1] - 1, day[2], 12), 'EEEE, MMMM d') : '',
+          itemCount: parseInt(set.itemCount, 10) || 0,
         }, notify);
         notified = 'email';
       } catch (err) { recordError_('status-email', err); }
@@ -351,6 +370,16 @@ function sendSms_(to, body) {
 // ---------- the sheet ----------
 
 /** The attached spreadsheet's Bookings tab, or a spreadsheet created in Drive on first use. */
+/** Private Drive folder for pickup photos (only the owner of this script can open them). */
+function photoFolder_() {
+  const props = PropertiesService.getScriptProperties();
+  const id = props.getProperty('PHOTO_FOLDER_ID');
+  if (id) { try { return DriveApp.getFolderById(id); } catch (err) { /* deleted — make a new one */ } }
+  const folder = DriveApp.createFolder('Empty the Drawer pickup photos');
+  props.setProperty('PHOTO_FOLDER_ID', folder.getId());
+  return folder;
+}
+
 function sheet_() {
   let ss = SpreadsheetApp.getActiveSpreadsheet();
   if (!ss) {
@@ -487,7 +516,7 @@ function sendStatusEmail_(b, kind) {
     subject: `Picked up — thank you! (${b.code})`,
     title: `Thank you, ${first}`,
     lines: [
-      `We've picked up your devices (${b.code}).`,
+      b.itemCount ? `We've picked up your ${b.itemCount} item${b.itemCount === 1 ? '' : 's'} (${b.code}).` : `We've picked up your devices (${b.code}).`,
       "They're going to the Electronic Recycling Association, where every drive is wiped or shredded and what can be fixed is refurbished for charities, schools and care homes.",
     ],
   };
@@ -539,6 +568,8 @@ function status_() {
     bookingsInSheet: bookings,
     sendAsDonationsReady: sendAsReady,
     crewPasscodeSet: !!props.getProperty('CREW_PASSCODE'),
+    photoFolderReady: !!props.getProperty('PHOTO_FOLDER_ID'),
+    itemsCollected: itemsCollected_(),
     twilioReady: twilioReady_(),
     emailsLeftToday: MailApp.getRemainingDailyQuota(),
     lastError: JSON.parse(props.getProperty('LAST_ERROR') || 'null'),
@@ -556,9 +587,21 @@ function setup() {
   console.log('Crew app passcode: ' + props.getProperty('CREW_PASSCODE') + '  (change it in Project Settings → Script properties)');
   console.log('Twilio texts: ' + (twilioReady_() ? 'ready' : 'not set up — add TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN and TWILIO_FROM in Script properties'));
   console.log('Bookings sheet: ' + sh.getParent().getUrl());
+  console.log('Pickup photos: ' + photoFolder_().getUrl());
   console.log('Send as ' + CONFIG.fromAddress + ': ' + (GmailApp.getAliases().indexOf(CONFIG.fromAddress) !== -1 ? 'ready' : 'NOT set up in Gmail yet'));
   console.log('Emails left today: ' + MailApp.getRemainingDailyQuota());
   PropertiesService.getScriptProperties().deleteProperty('LAST_ERROR');
+}
+
+/** Total items collected across all pickups (a number, no booking data). */
+function itemsCollected_() {
+  try {
+    const sh = sheet_();
+    const c = columns_(sh);
+    if (sh.getLastRow() < 2 || !c.itemCount) return 0;
+    return sh.getRange(2, c.itemCount, sh.getLastRow() - 1, 1).getValues()
+      .reduce((sum, [v]) => sum + (Number(v) > 0 ? Number(v) : 0), 0);
+  } catch (err) { return null; }
 }
 
 function recordError_(where, err) {

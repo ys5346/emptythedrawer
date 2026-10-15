@@ -23,6 +23,8 @@ final class CrewStore {
     var toast: String?
     var textToSend: TextToSend?
     private(set) var savingCode: String?
+    /// The driver's order for today's stops (codes). Kept on this iPhone only.
+    private(set) var stopOrder: [String] = []
 
     /// Launch with `-demo` to use sample pickups (simulator testing; nothing is sent).
     let isDemo = ProcessInfo.processInfo.arguments.contains("-demo")
@@ -34,6 +36,7 @@ final class CrewStore {
             hasLoaded = true
             return
         }
+        stopOrder = Self.loadStopOrder(for: today)
         passcode = Keychain.read()
         outbox = LocalStore.loadOutbox()
         if passcode != nil, let cached = LocalStore.loadList() {
@@ -42,6 +45,7 @@ final class CrewStore {
             lastSynced = cached.savedAt
             hasLoaded = true
             for change in outbox { pickups.apply(change.set, to: change.code) }
+            stopOrder = Self.loadStopOrder(for: today)
         }
     }
 
@@ -61,6 +65,27 @@ final class CrewStore {
     var pickedUp: [Pickup] { pickups.filter { $0.status == .pickedUp } }
     /// Every booking, newest first.
     var all: [Pickup] { pickups.sorted { ($0.bookedIso ?? "") > ($1.bookedIso ?? "") } }
+
+    /// Today's stops in the driver's order. Stops not placed yet go last, overdue ones first.
+    var route: [Pickup] {
+        let due = dueToday
+        let placed = stopOrder.compactMap { code in due.first { $0.code == code } }
+        return placed + due.filter { !stopOrder.contains($0.code) }
+    }
+    var nextStop: Pickup? { route.first }
+
+    func moveStops(from source: IndexSet, to destination: Int) {
+        var codes = route.map(\.code)
+        codes.move(fromOffsets: source, toOffset: destination)
+        stopOrder = codes
+        UserDefaults.standard.set(["day": today, "codes": codes], forKey: "stopOrder")
+    }
+
+    private static func loadStopOrder(for day: String) -> [String] {
+        guard let saved = UserDefaults.standard.dictionary(forKey: "stopOrder"),
+              saved["day"] as? String == day else { return [] }
+        return saved["codes"] as? [String] ?? []
+    }
 
     func isOverdue(_ p: Pickup) -> Bool { (p.status == .scheduled || p.status == .onTheWay) && (p.pickupDate ?? today) < today }
 
@@ -114,6 +139,7 @@ final class CrewStore {
         do {
             var (day, list) = try await CrewAPI(passcode: passcode).list()
             for change in outbox { list.apply(change.set, to: change.code) }   // keep unsent changes visible
+            if day != today { stopOrder = Self.loadStopOrder(for: day) }
             (today, pickups) = (day, list)
             lastSynced = .now
             isOffline = false
@@ -189,7 +215,15 @@ final class CrewStore {
         ["sms": "text sent", "email": "customer emailed"][notified] ?? "customer not notified"
     }
 
-    func markPickedUp(_ p: Pickup) async { await update(p, set: ["status": "picked_up"], done: "Picked up", tell: true) }
+    /// `photo` is a small JPEG; it's saved to the private pickup-photos folder in Google Drive.
+    @discardableResult
+    func markPickedUp(_ p: Pickup, items: Int?, photo: Data?) async -> Bool {
+        var set = ["status": "picked_up"]
+        if let items { set["itemCount"] = String(items) }
+        if let photo { set["photo"] = photo.base64EncodedString() }
+        let done = items.map { "Picked up \($0) item\($0 == 1 ? "" : "s")" } ?? "Picked up"
+        return await update(p, set: set, done: done, tell: true) != nil
+    }
     func markRecycled(_ p: Pickup) async { await update(p, set: ["status": "recycled"], done: "Marked recycled") }
 
     /// Sets "On the way". If the server didn't text the customer, offers a free text from this iPhone.
@@ -237,7 +271,7 @@ final class CrewStore {
 
     /// Google Maps route from the drop box through today's stops (Apple Maps can't take several stops by link).
     var todaysRoute: URL? {
-        let stops = dueToday.map(\.address).filter { !$0.isEmpty }.prefix(10)
+        let stops = route.map(\.address).filter { !$0.isEmpty }.prefix(10)
         guard let last = stops.last else { return nil }
         var c = URLComponents(string: "https://www.google.com/maps/dir/")!
         c.queryItems = [

@@ -11,9 +11,12 @@ struct PickupListScreen: View {
     @State private var confirmSignOut = false
     @State private var search = ""
     @State private var filter: PickupStatus?
+    @State private var pickingUp: Pickup?
+    @State private var reordering = false
+    @State private var path: [String] = []
 
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: $path) {
             List {
                 if let notice = store.syncNotice {
                     Label(notice, systemImage: store.isOffline ? "antenna.radiowaves.left.and.right.slash" : "arrow.triangle.2.circlepath")
@@ -28,6 +31,8 @@ struct PickupListScreen: View {
                 sections
             }
             .listStyle(.insetGrouped)
+            .environment(\.editMode, .constant(reordering ? .active : .inactive))
+            .animation(.default, value: reordering)
             .navigationTitle(title)
             .navigationDestination(for: String.self) { code in PickupDetailView(code: code) }
             .refreshable { await store.refresh() }
@@ -35,7 +40,13 @@ struct PickupListScreen: View {
             .overlay { if store.hasLoaded && items.isEmpty { empty } }
             .overlay { if !store.hasLoaded { ProgressView("Loading pickups…") } }
             .toolbar {
-                if tab == .today, let route = store.todaysRoute {
+                if tab == .today, store.route.count > 1 {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Button(reordering ? "Done" : "Reorder") { reordering.toggle() }
+                            .fontWeight(reordering ? .semibold : .regular)
+                    }
+                }
+                if tab == .today, !reordering, let route = store.todaysRoute {
                     ToolbarItem(placement: .topBarTrailing) {
                         Button { openURL(route) } label: { Label("Route", systemImage: "point.topleft.down.to.point.bottomright.curvepath.fill") }
                     }
@@ -62,6 +73,8 @@ struct PickupListScreen: View {
                 }
             }
             .sheet(item: $scheduling) { p in ScheduleSheet(pickup: p) }
+            .sheet(item: $pickingUp) { p in PickedUpSheet(pickup: p) }
+            .onChange(of: store.route.count) { _, n in if n < 2 { reordering = false } }
             .alert("Couldn’t pick up?", isPresented: Binding(get: { missing != nil }, set: { if !$0 { missing = nil } })) {
                 TextField("What happened?", text: $missReason)
                 Button("Cancel", role: .cancel) { missing = nil }
@@ -83,16 +96,34 @@ struct PickupListScreen: View {
     @ViewBuilder private var sections: some View {
         switch tab {
         case .today:
-            let overdue = store.dueToday.filter(store.isOverdue)
-            let todays = store.dueToday.filter { !store.isOverdue($0) }
-            if !overdue.isEmpty {
-                Section { rows(overdue) } header: { Label("Overdue", systemImage: "exclamationmark.circle.fill").foregroundStyle(.red) }
-            }
-            if !todays.isEmpty {
-                Section { rows(todays) } header: { Text(Day.date(store.today)?.formatted(.dateTime.weekday(.wide).month(.wide).day()) ?? "Today") }
-            }
-            if !store.dueToday.isEmpty {
-                Section {} footer: { SwipeHint(text: "Swipe right to mark picked up. Swipe left for On My Way, which texts the customer, or to change the day.") }
+            let route = store.route
+            if reordering {
+                Section {
+                    ForEach(Array(route.enumerated()), id: \.element.code) { i, p in
+                        PickupRow(pickup: p, showDate: store.isOverdue(p), stopNumber: i + 1)
+                    }
+                    .onMove { store.moveStops(from: $0, to: $1) }
+                } header: {
+                    Text("Drag stops into the order you’ll drive")
+                }
+            } else {
+                if let next = route.first {
+                    Section {
+                        NextStopCard(pickup: next, overdue: store.isOverdue(next),
+                                     onDetails: { path.append(next.code) },
+                                     onMyWay: { Task { await store.onMyWay(next) } },
+                                     onPickedUp: { pickingUp = next })
+                            .listRowInsets(EdgeInsets())
+                    } header: {
+                        Text("Next Stop · 1 of \(route.count)")
+                    }
+                }
+                if route.count > 1 {
+                    Section("Then") { rows(Array(route.dropFirst()), numberFrom: 2) }
+                }
+                if !route.isEmpty {
+                    Section {} footer: { SwipeHint(text: "Swipe right to mark picked up. Swipe left for On My Way, which texts the customer, or to change the day. Tap Reorder to set the order you’ll drive.") }
+                }
             }
         case .upcoming:
             let days = Dictionary(grouping: store.upcoming, by: { $0.pickupDate ?? "" })
@@ -129,10 +160,11 @@ struct PickupListScreen: View {
         }
     }
 
-    private func rows(_ list: [Pickup]) -> some View {
-        ForEach(list) { p in
+    private func rows(_ list: [Pickup], numberFrom first: Int? = nil) -> some View {
+        ForEach(Array(list.enumerated()), id: \.element.code) { i, p in
             NavigationLink(value: p.code) {
-                PickupRow(pickup: p, showDate: tab == .today && store.isOverdue(p), showStatus: tab == .all)
+                PickupRow(pickup: p, showDate: tab == .today && store.isOverdue(p), showStatus: tab == .all,
+                          stopNumber: first.map { $0 + i })
             }
             .swipeActions(edge: .leading, allowsFullSwipe: true) { forwardAction(p) }
             .swipeActions(edge: .trailing, allowsFullSwipe: false) { otherActions(p) }
@@ -145,7 +177,7 @@ struct PickupListScreen: View {
     @ViewBuilder private func forwardAction(_ p: Pickup) -> some View {
         switch p.status {
         case .pending, .scheduled, .onTheWay:
-            Button { Task { await store.markPickedUp(p) } } label: { Label("Picked Up", systemImage: "checkmark") }
+            Button { pickingUp = p } label: { Label("Picked Up", systemImage: "checkmark") }
                 .tint(.green)
         case .pickedUp:
             Button { Task { await store.markRecycled(p) } } label: { Label("Recycled", systemImage: "arrow.3.trianglepath") }
@@ -227,8 +259,22 @@ struct PickupRow: View {
     let pickup: Pickup
     var showDate = false
     var showStatus = false
+    var stopNumber: Int?
 
     var body: some View {
+        HStack(alignment: .firstTextBaseline, spacing: 12) {
+            if let stopNumber {
+                Text("\(stopNumber)")
+                    .font(.subheadline.weight(.bold).monospacedDigit())
+                    .foregroundStyle(.white)
+                    .frame(width: 26, height: 26)
+                    .background(Color.ink, in: .circle)
+            }
+            details
+        }
+    }
+
+    private var details: some View {
         VStack(alignment: .leading, spacing: 4) {
             HStack(alignment: .firstTextBaseline) {
                 Text(pickup.displayName)
@@ -268,7 +314,9 @@ struct PickupRow: View {
         }
         if pickup.status == .onTheWay { f.append(("On the way", "location.fill", .purple)) }
         if pickup.latestRequest != nil { f.append(("Customer request", "exclamationmark.bubble.fill", .red)) }
-        if !pickup.notes.isEmpty { f.append(("Driver notes", "note.text", .orange)) }
+        if !pickup.notes.isEmpty && pickup.status.isActive { f.append(("Driver notes", "note.text", .orange)) }
+        if let n = pickup.itemCount, !pickup.status.isActive { f.append(("\(n) collected", "shippingbox.fill", .green)) }
+        if pickup.hasPhoto { f.append(("Photo", "camera.fill", .blue)) }
         return f
     }
 }
@@ -312,5 +360,85 @@ struct SwipeHint: View {
         Label(text, systemImage: "hand.draw")
             .font(.footnote)
             .foregroundStyle(.secondary)
+    }
+}
+
+
+/// The stop the truck is heading to now, with the buttons the driver needs at the door.
+struct NextStopCard: View {
+    let pickup: Pickup
+    var overdue = false
+    let onDetails: () -> Void
+    let onMyWay: () -> Void
+    let onPickedUp: () -> Void
+    @Environment(\.openURL) private var openURL
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            Button(action: onDetails) {
+                HStack(alignment: .top) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(pickup.displayName).font(.title2.bold())
+                        Text(pickup.shortAddress).font(.body).foregroundStyle(.secondary)
+                        if !pickup.load.isEmpty {
+                            Text(pickup.load).font(.subheadline).foregroundStyle(.secondary)
+                        }
+                    }
+                    Spacer(minLength: 8)
+                    Image(systemName: "chevron.right")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(.tertiary)
+                        .padding(.top, 6)
+                }
+                .contentShape(.rect)
+            }
+            .buttonStyle(.plain)
+
+            if overdue || pickup.status == .onTheWay {
+                HStack(spacing: 6) {
+                    if overdue, let d = Day.date(pickup.pickupDate) {
+                        Tag(text: "Was due \(d.formatted(.dateTime.month(.abbreviated).day()))", systemImage: "clock.badge.exclamationmark", color: .red)
+                    }
+                    if pickup.status == .onTheWay { Tag(text: "On the way", systemImage: "location.fill", color: .purple) }
+                }
+            }
+            if !pickup.notes.isEmpty {
+                Callout(title: "Driver notes", text: pickup.notes, systemImage: "note.text", color: .orange)
+            }
+            if let r = pickup.latestRequest {
+                Callout(title: "Customer request", text: r, systemImage: "exclamationmark.bubble.fill", color: .red)
+            }
+
+            HStack(spacing: 10) {
+                QuickAction(title: "Directions", systemImage: "car.fill", enabled: !pickup.address.isEmpty) {
+                    openURL(pickup.directionsURL)
+                }
+                .tint(.blue)
+                QuickAction(title: "Call", systemImage: "phone.fill", enabled: !pickup.phoneDigits.isEmpty) {
+                    if let url = URL(string: "tel:\(pickup.phoneDigits)") { openURL(url) }
+                }
+                .tint(.green)
+                QuickAction(title: pickup.status == .onTheWay ? "On the Way" : "On My Way", systemImage: "location.fill",
+                            enabled: pickup.status == .scheduled, action: onMyWay)
+                .tint(.purple)
+            }
+            BigButton(title: "Picked Up", systemImage: "checkmark.circle.fill", action: onPickedUp)
+                .tint(.green)
+        }
+        .padding(16)
+    }
+}
+
+/// A highlighted note on the Next Stop card.
+private struct Callout: View {
+    let title: String
+    let text: String
+    let systemImage: String
+    let color: Color
+    var body: some View {
+        NoteRow(title: title, text: text, systemImage: systemImage, color: color)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(12)
+            .background(color.opacity(0.1), in: .rect(cornerRadius: 12, style: .continuous))
     }
 }

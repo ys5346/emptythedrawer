@@ -14,6 +14,7 @@ struct PickupDetailView: View {
     @State private var confirmCancel = false
     @State private var noting = false
     @State private var noteText = ""
+    @State private var pickingUp = false
 
     private var pickup: Pickup? { store.pickups.first { $0.code == code } }
 
@@ -69,6 +70,15 @@ struct PickupDetailView: View {
                 }
                 .tint(.primary)
                 if !p.load.isEmpty { LabeledContent("Items", value: p.load) }
+                if let n = p.itemCount { LabeledContent("Collected", value: "\(n) item\(n == 1 ? "" : "s")") }
+                if p.photoUrl == "pending" {
+                    LabeledContent("Photo", value: "Uploads when there’s signal")
+                } else if p.hasPhoto, let url = URL(string: p.photoUrl ?? "") {
+                    Button { openURL(url) } label: {
+                        LabeledContent("Photo") { Label("Open in Drive", systemImage: "photo").foregroundStyle(.tint) }
+                    }
+                    .tint(.primary)
+                }
                 LabeledContent("Confirmation") { Text(p.code).monospaced() }
                 if !p.bookedAt.isEmpty { LabeledContent("Booked", value: p.bookedAt) }
             }
@@ -83,6 +93,7 @@ struct PickupDetailView: View {
         .overlay { if store.savingCode == p.code { ProgressView().controlSize(.large) } }
         .task(id: p.address) { await locate(p.address) }
         .sheet(isPresented: $scheduling) { ScheduleSheet(pickup: p) }
+        .sheet(isPresented: $pickingUp) { PickedUpSheet(pickup: p) }
         .alert("Couldn’t pick up?", isPresented: $missing) {
             TextField("What happened?", text: $missReason)
             Button("Cancel", role: .cancel) {}
@@ -107,12 +118,12 @@ struct PickupDetailView: View {
     @ViewBuilder private func actions(_ p: Pickup) -> some View {
         switch p.status {
         case .scheduled, .onTheWay:
-            BigButton(title: "Mark Picked Up", systemImage: "checkmark.circle.fill") { Task { await store.markPickedUp(p) } }
+            BigButton(title: "Mark Picked Up", systemImage: "checkmark.circle.fill") { pickingUp = true }
             Button("Couldn’t Pick Up", systemImage: "xmark.circle") { missReason = ""; missing = true }
             Button("Change Pickup Day", systemImage: "calendar") { scheduling = true }
         case .pending:
             BigButton(title: "Schedule Pickup", systemImage: "calendar.badge.plus") { scheduling = true }
-            Button("Mark Picked Up Now", systemImage: "checkmark.circle") { Task { await store.markPickedUp(p) } }
+            Button("Mark Picked Up Now", systemImage: "checkmark.circle") { pickingUp = true }
         case .pickedUp:
             BigButton(title: "Mark Recycled", systemImage: "arrow.3.trianglepath") { Task { await store.markRecycled(p) } }
             Button("Undo Pickup", systemImage: "arrow.uturn.backward") { Task { await store.undoPickup(p) } }

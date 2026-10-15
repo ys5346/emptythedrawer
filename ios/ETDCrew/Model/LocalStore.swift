@@ -62,6 +62,8 @@ extension Array where Element == Pickup {
         guard let i = firstIndex(where: { $0.code == code }) else { return }
         if let date = set["pickupDate"] { self[i].pickupDate = date.isEmpty ? nil : date }
         if let s = set["status"], let status = PickupStatus(rawValue: s) { self[i].status = status }
+        if let n = set["itemCount"] { self[i].itemCount = Int(n) }
+        if let photo = set["photo"], !photo.isEmpty { self[i].photoUrl = "pending" }
         if let note = set["crewNote"] { self[i].crewNotes += (self[i].crewNotes.isEmpty ? "" : "\n") + "Today: " + note }
     }
 }

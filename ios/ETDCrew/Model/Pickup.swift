@@ -52,6 +52,8 @@ struct Pickup: Codable, Identifiable, Hashable {
     let requests: String
     var crewNotes: String
     var bookedIso: String? = nil    // for sorting newest first
+    var itemCount: Int? = nil       // items actually collected, recorded at pickup
+    var photoUrl: String? = nil     // Google Drive link to the pickup photo ("pending" until it syncs)
 
     var id: String { code }
     var firstName: String { name.split(separator: " ").first.map(String.init) ?? "there" }
@@ -59,6 +61,18 @@ struct Pickup: Codable, Identifiable, Hashable {
     var latestRequest: String? { requests.split(separator: "\n").last.map(String.init) }
     var latestCrewNote: String? { crewNotes.split(separator: "\n").last.map(String.init) }
     var phoneDigits: String { phone.filter { $0.isNumber || $0 == "+" } }
+    /// Driving directions in Apple Maps.
+    var directionsURL: URL {
+        var c = URLComponents(string: "http://maps.apple.com/")!
+        c.queryItems = [.init(name: "daddr", value: address), .init(name: "dirflg", value: "d")]
+        return c.url!
+    }
+    var hasPhoto: Bool { !(photoUrl ?? "").isEmpty }
+
+    /// Items the customer said they had ("3 items — Laptops" → 3), as the starting count at pickup.
+    var bookedItemCount: Int? {
+        load.split(separator: " ").first.flatMap { Int($0) }
+    }
 
     /// Address without the postal code, for one-line display.
     var shortAddress: String {
