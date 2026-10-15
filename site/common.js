@@ -5,8 +5,8 @@ window.ETD = (() => {
   // address itself isn't exposed to bots scraping form endpoints.
   const INBOX = 'ad729216847b814c6cdb643755980a7f';
 
-  // Google Apps Script web app that emails customers their confirmation and logs
-  // each booking to a Google Sheet (see tools/booking-confirmation.gs). Empty = off.
+  // Google Apps Script web app (tools/booking-confirmation.gs): logs each booking to the
+  // bookings Google Sheet, emails the customer, and answers status lookups. Empty = off.
   const CONFIRM_URL = 'https://script.google.com/macros/s/AKfycbybYDqPku8HkKxYtUy3v-nw0T3ZBygCDlBZJ6hG_BrTaUv6BLHD7-LAVzE3a5O1bYn8KQ/exec';
 
   // Fire-and-forget: a failed confirmation email must never block a booking.
@@ -16,6 +16,24 @@ window.ETD = (() => {
       fetch(CONFIRM_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(booking) }).catch(() => {});
     } catch (e) { /* ignore */ }
     return true;
+  }
+
+  // Note a cancel / reschedule / change request on the booking's row (fire-and-forget).
+  function request(data) {
+    if (!CONFIRM_URL) return;
+    try {
+      fetch(CONFIRM_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ ...data, type: 'request' }) }).catch(() => {});
+    } catch (e) { /* ignore */ }
+  }
+
+  // Look up a booking's live status. Resolves to the booking, { found: false }, or null if unreachable.
+  async function lookup(code) {
+    if (!CONFIRM_URL) return null;
+    try {
+      const res = await fetch(CONFIRM_URL + '?action=lookup&code=' + encodeURIComponent(code), { cache: 'no-store' });
+      if (!res.ok) return null;
+      return await res.json();
+    } catch (e) { return null; }
   }
 
   async function send(fields) {
@@ -46,5 +64,5 @@ window.ETD = (() => {
   const findBooking = code => readAll()[code] || null;
   const updateBooking = (code, patch) => { const all = readAll(); if (all[code]) { all[code] = { ...all[code], ...patch }; writeAll(all); } };
 
-  return { send, confirm, CODE_RE, normCode, newCode, saveBooking, findBooking, updateBooking };
+  return { send, confirm, request, lookup, CODE_RE, normCode, newCode, saveBooking, findBooking, updateBooking };
 })();

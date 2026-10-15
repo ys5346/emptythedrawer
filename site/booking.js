@@ -205,8 +205,9 @@ function Booking({ home, scrollTarget }) {
     };
     ETD.saveBooking(code, saved);
     const manageUrl = new URL('manage.html?code=' + code, location.href).href;
-    const emailed = saved.email && ETD.confirm({ ...saved, code, manageUrl, _honey: honey });
-    return emailed ? saved.email : '';
+    // Always record the booking in the sheet; the script only emails when there's an address.
+    const recorded = ETD.confirm({ ...saved, code, manageUrl, _honey: honey });
+    return recorded && saved.email ? saved.email : '';
   };
 
   const submit = async e => {

@@ -1,6 +1,6 @@
-// Manage-booking flow: confirmation code, then cancel / reschedule / change
-// details. Sends the request to the bookings inbox. Needs React, ReactDOM,
-// htm and common.js.
+// Manage-booking flow: confirmation code → live status from the bookings sheet →
+// cancel / reschedule / change while the pickup is still ahead. Requests go to the
+// bookings inbox and onto the booking's row. Needs React, ReactDOM, htm and common.js.
 (() => {
 const { useState, useRef, useEffect } = React;
 const html = htm.bind(React.createElement);
@@ -28,7 +28,7 @@ const NOTE = {
   change: { title: 'New details', ph: 'e.g. New address is 456 Main St, Unit 2' }
 };
 const DONE = {
-  cancel: ['Pickup cancelled', "We've taken you off the truck run. You'll get a confirmation within one business day."],
+  cancel: ['Cancellation sent', "We'll take you off the truck run and confirm within one business day."],
   reschedule: ['Request sent', "We'll find a new slot and confirm it within one business day."],
   change: ['Changes sent', "We'll update your booking and confirm within one business day."]
 };
@@ -59,8 +59,41 @@ function Group({ title, hint, children }) {
     </section>`;
 }
 
+const STEPS = [
+  { key: 'new', label: 'Booked' },
+  { key: 'scheduled', label: 'Pickup scheduled' },
+  { key: 'picked_up', label: 'Picked up' },
+  { key: 'recycled', label: 'Recycled' }
+];
+const STATUS_TEXT = {
+  new: ['Booked', "We'll confirm your pickup day within one business day."],
+  scheduled: ['Pickup scheduled', 'Leave everything by your door on pickup day. You don\u2019t need to be home.'],
+  picked_up: ['Picked up', 'Your devices are on their way to ERA to be wiped and refurbished.'],
+  recycled: ['Recycled', 'Every drive was wiped or shredded, and your devices have been refurbished or recycled. Thank you!'],
+  cancelled: ['Cancelled', 'This pickup was cancelled.']
+};
+
+function Timeline({ booking }) {
+  const at = STEPS.findIndex(s => s.key === booking.status);
+  return html`
+    <ol class="timeline">
+      ${STEPS.map((s, i) => {
+        const state = i < at ? 'done' : i === at ? 'now' : 'next';
+        let sub = '';
+        if (s.key === 'new' && booking.bookedLabel) sub = booking.bookedLabel;
+        if (s.key === 'scheduled') sub = booking.pickupLabel || (i >= at ? 'We\u2019ll confirm your day' : '');
+        return html`
+          <li key=${s.key} class=${'tl-step ' + state}>
+            <span class="tl-dot">${state === 'done' && CHECK}</span>
+            <span class="tl-text"><span class="tl-label">${s.label}</span>${sub && html`<span class="tl-sub">${sub}</span>`}</span>
+          </li>`;
+      })}
+    </ol>`;
+}
+
 function Manage({ initialCode }) {
   const [code, setCode] = useState(ETD.normCode(initialCode || ''));
+  const [look, setLook] = useState({ state: 'idle' });
   const [action, setAction] = useState(null);
   const [picked, setPicked] = useState([]);
   const [note, setNote] = useState('');
@@ -68,13 +101,32 @@ function Manage({ initialCode }) {
   const [sendErr, setSendErr] = useState('');
   const [done, setDone] = useState(null);
   const [honey, setHoney] = useState('');
+  const lookId = useRef(0);
 
   const complete = code.length === 5;
   const valid = ETD.CODE_RE.test(code);
-  const saved = valid ? ETD.findBooking(code) : null;
   const act = ACTIONS.find(a => a.key === action);
 
-  const ready = valid && act &&
+  // Check the code against the bookings sheet as soon as it's complete.
+  useEffect(() => {
+    setAction(null); setPicked([]); setNote(''); setSendErr('');
+    if (!valid) { setLook({ state: 'idle' }); return; }
+    const id = ++lookId.current;
+    setLook({ state: 'loading' });
+    ETD.lookup(code).then(r => {
+      if (id !== lookId.current) return;
+      if (r === null) setLook({ state: 'error' });
+      else if (r.busy) setLook({ state: 'busy' });
+      else if (!r.found) setLook({ state: 'missing' });
+      else setLook({ state: 'found', booking: r });
+    });
+  }, [code]);
+
+  const booking = look.state === 'found' ? look.booking : null;
+  // Changes are allowed while the pickup hasn't happened, or if we couldn't reach the sheet.
+  const canChange = (booking && (booking.status === 'new' || booking.status === 'scheduled')) || look.state === 'error';
+
+  const ready = valid && canChange && act &&
     (action !== 'reschedule' || picked.length > 0 || note.trim()) &&
     (action !== 'change' || note.trim());
 
@@ -92,14 +144,15 @@ function Manage({ initialCode }) {
       [OPTIONS[action].title]: picked.join(', ') || '—',
       'Details': note.trim() || '—'
     };
-    if (saved) {
-      fields['Original booking (from customer\'s device)'] =
-        [saved.name, saved.address, saved.load, saved.email || saved.phone, saved.notes && 'Notes: ' + saved.notes].filter(Boolean).join(' · ');
+    if (booking) {
+      fields['Booking'] = [booking.firstName, booking.area, STATUS_TEXT[booking.status][0], booking.pickupLabel && 'pickup ' + booking.pickupLabel].filter(Boolean).join(' · ');
+    } else {
+      fields['Booking'] = "Couldn't check the bookings sheet — look it up by code";
     }
     setSending(true); setSendErr('');
     try {
       await ETD.send(fields);
-      ETD.updateBooking(code, { lastRequest: action, lastRequestAt: new Date().toISOString() });
+      ETD.request({ code, action, choices: picked.join(', '), details: note.trim(), _honey: honey });
       setDone(action);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (err) {
@@ -122,6 +175,15 @@ function Manage({ initialCode }) {
       </div>`;
   }
 
+  let help = 'For example, AB12C';
+  let helpBad = false;
+  if (complete && !valid) { help = "That doesn't look like a confirmation number. It's 2 letters, 2 numbers, then a letter."; helpBad = true; }
+  else if (look.state === 'loading') help = 'Looking up your booking…';
+  else if (look.state === 'missing') { help = "We can't find a booking with that number. Check it against your confirmation email, or contact us."; helpBad = true; }
+  else if (look.state === 'busy') { help = 'Lots of lookups right now. Try again in a minute.'; helpBad = true; }
+  else if (look.state === 'error') help = "Couldn't check your booking right now, but you can still send us a request.";
+  else if (booking) help = '';
+
   return html`
     <form onSubmit=${submit} noValidate>
       <header class="intro">
@@ -129,20 +191,37 @@ function Manage({ initialCode }) {
         <p class="subtitle">Enter the five-character confirmation number from when you booked.</p>
       </header>
 
-      <${CodeInput} value=${code} onChange=${v => { setCode(v); setSendErr(''); }} invalid=${complete && !valid} />
-      <p class=${'code-help' + (complete && !valid ? ' bad' : '')} aria-live="polite">
-        ${complete && !valid ? "That doesn't look like a confirmation number. It's 2 letters, 2 numbers, then a letter." : 'For example, AB12C'}
+      <${CodeInput} value=${code} onChange=${v => { setCode(v); setSendErr(''); }} invalid=${(complete && !valid) || look.state === 'missing'} />
+      <p class=${'code-help' + (helpBad ? ' bad' : '')} aria-live="polite">
+        ${look.state === 'loading' && html`<span class="spinner dark" aria-hidden="true"></span> `}${help}
       </p>
 
-      ${valid && html`
+      ${booking && html`
         <div class="reveal">
-          ${saved && html`
-            <${Group} title="Your booking">
+          <${Group} title=${booking.firstName ? `Hi ${booking.firstName}` : 'Your booking'}>
+            <div class="status-head">
+              <span class=${'status-pill ' + booking.status}>${STATUS_TEXT[booking.status][0]}</span>
+              <p>${STATUS_TEXT[booking.status][1]}</p>
+            </div>
+            ${booking.status !== 'cancelled' && html`<${Timeline} booking=${booking} />`}
+            ${(booking.area || booking.load) && html`
               <div class="row static">
-                <div class="row-text"><div class="row-label">${saved.address}</div><div class="row-sub">${saved.load}</div></div>
-              </div>
-            <//>`}
+                <div class="row-text">
+                  ${booking.area && html`<div class="row-label">Pickup in ${booking.area}</div>`}
+                  ${booking.load && html`<div class="row-sub">${booking.load}</div>`}
+                </div>
+              </div>`}
+            ${booking.lastRequest && html`
+              <div class="row static">
+                <div class="row-text"><div class="row-label">Your latest request</div><div class="row-sub">${booking.lastRequest} · we'll confirm by email or text</div></div>
+              </div>`}
+          <//>
+          ${booking.status === 'cancelled' && html`<p class="after-note"><a href="book.html">Book a new pickup</a></p>`}
+          ${(booking.status === 'picked_up' || booking.status === 'recycled') && html`<p class="after-note">Questions about your donation? <a href="contact.html">Contact us</a>.</p>`}
+        </div>`}
 
+      ${valid && canChange && html`
+        <div class="reveal">
           <${Group} title="What would you like to do?">
             ${ACTIONS.map(a => html`
               <button type="button" key=${a.key} class=${'row' + (action === a.key ? ' selected' : '')}

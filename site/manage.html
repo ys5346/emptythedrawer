@@ -91,6 +91,30 @@ body{background:var(--bg)}
 .spinner{width:16px;height:16px;border-radius:50%;border:2px solid rgba(0,0,0,.18);border-top-color:rgba(0,0,0,.5);animation:spin .7s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
 .send-err{text-align:center;font-size:14px;color:#d70015;margin:12px 0 0}
+/* booking status */
+.status-head{padding:16px 18px 6px}
+.status-head p{margin:10px 0 0;font-size:15px;line-height:1.45;color:var(--label-2)}
+.status-pill{display:inline-block;font-size:13px;font-weight:600;letter-spacing:.01em;padding:5px 11px;border-radius:999px;background:#eef0ea;color:var(--ink)}
+.status-pill.scheduled{background:#e7f4c2;color:#3d5410}
+.status-pill.picked_up{background:var(--lime);color:var(--ink)}
+.status-pill.recycled{background:var(--ink);color:var(--lime)}
+.status-pill.cancelled{background:#fde7e7;color:#a3121f}
+.timeline{list-style:none;margin:6px 0 0;padding:6px 18px 14px}
+.tl-step{position:relative;display:flex;gap:14px;align-items:flex-start;padding:8px 0}
+.tl-step:not(:last-child)::after{content:"";position:absolute;left:11px;top:32px;bottom:-8px;width:2px;background:var(--sep)}
+.tl-step.done:not(:last-child)::after{background:var(--ink)}
+.tl-dot{flex:none;width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:#fff;box-shadow:inset 0 0 0 2px var(--sep);color:var(--lime)}
+.tl-dot svg{width:14px;height:14px}
+.tl-step.done .tl-dot{background:var(--ink);box-shadow:none}
+.tl-step.now .tl-dot{box-shadow:inset 0 0 0 2px var(--ink),0 0 0 4px rgba(10,46,44,.1);background:var(--lime)}
+.tl-text{display:flex;flex-direction:column;gap:1px;padding-top:2px}
+.tl-label{font-size:16px;letter-spacing:-.01em;color:var(--label)}
+.tl-step.next .tl-label{color:var(--label-3)}
+.tl-step.now .tl-label{font-weight:600}
+.tl-sub{font-size:13.5px;color:var(--label-2)}
+.after-note{text-align:center;font-size:15px;color:var(--label-2);margin:16px 0 0}
+.after-note a{color:var(--olive);font-weight:600}
+.spinner.dark{display:inline-block;vertical-align:-3px;margin-right:6px;width:14px;height:14px;border-color:rgba(0,0,0,.12);border-top-color:rgba(0,0,0,.45)}
 .honey{position:absolute;left:-9999px;width:1px;height:1px;opacity:0}
 
 /* done */
