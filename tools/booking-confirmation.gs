@@ -9,7 +9,7 @@
  *                              never the customer's name, address, contact details or items.
  *   3. Request      (POST type=request) → notes a cancel / reschedule / change
  *                              request on the booking's row.
- *   4. Crew app     (POST type=crew + passcode) → lists active pickups with full
+ *   4. Crew app     (POST type=crew + passcode) → lists every pickup with full
  *                              details and updates status, pickup date and crew notes
  *                              for the crew app at emptythedrawer.org/crew/. Customers
  *                              get an email when their pickup is scheduled and picked up.
@@ -44,7 +44,7 @@ const CONFIG = {
   notifyCustomers: true,          // email customers when a pickup is scheduled and when it's picked up
 };
 
-const VERSION = '2026-10-14e';
+const VERSION = '2026-10-14f';
 
 const CODE_RE = /^[A-HJ-NP-Z]{2}\d{2}[A-HJ-NP-Z]$/;
 const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[a-z]{2,}$/i;
@@ -222,7 +222,7 @@ function crewAuth_(given) {
   return 'passcode';
 }
 
-/** Every pickup that still needs something done: New, Scheduled and Picked up. */
+/** Every booking in the sheet, newest first, for the crew app. */
 function crewList_() {
   const sh = sheet_();
   const last = sh.getLastRow();
@@ -238,6 +238,7 @@ function crewList_() {
       status,
       pickupDate: pickup ? fmt_(pickup, 'yyyy-MM-dd') : null,
       bookedAt: get('bookedAt') instanceof Date ? fmt_(get('bookedAt'), 'MMM d, h:mm a') : '',
+      bookedIso: get('bookedAt') instanceof Date ? get('bookedAt').toISOString() : '',
       name: String(get('name') || ''),
       email: String(get('email') || ''),
       phone: String(get('phone') || ''),
@@ -247,7 +248,7 @@ function crewList_() {
       requests: String(get('requests') || ''),
       crewNotes: String(get('crewNotes') || ''),
     };
-  }).filter(b => CODE_RE.test(b.code) && ['new', 'scheduled', 'picked_up'].indexOf(b.status) !== -1);
+  }).filter(b => CODE_RE.test(b.code)).reverse();
 }
 
 function crewUpdate_(code, set) {
@@ -278,7 +279,8 @@ function crewUpdate_(code, set) {
     const label = STATUS_KEYS[set.status];
     if (!label) return { ok: false, error: 'status' };
     sh.getRange(r, c.status).setValue(label);
-    if (set.status === 'picked_up' && beforeStatus !== 'picked_up') notify = 'picked_up';
+    // Only a real pickup emails the customer — undoing a "Recycled" mark never re-sends the thank-you.
+    if (set.status === 'picked_up' && (beforeStatus === 'new' || beforeStatus === 'scheduled')) notify = 'picked_up';
     if (set.status !== 'scheduled' && notify === 'scheduled') notify = null;
   }
   if (set.crewNote) {

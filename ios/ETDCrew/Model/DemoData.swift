@@ -25,13 +25,17 @@ enum DemoData {
               "1200 W 73rd Ave, Vancouver, V6P 6G5", "1 item — Gaming consoles"),
             p("KL90M", .pickedUp, day(-2), "Kay Wu", "604-555-0105", "kay@example.com",
               "4949 Canoe Pass Way, Delta, V4M 0B2", "1 item — Laptops"),
-        ])
+            p("RC22T", .recycled, day(-9), "Dev Sharma", "604-555-0108", "dev@example.com",
+              "3000 Lougheed Hwy, Coquitlam, V3B 1C5", "6 items — Laptops, Phones, Tablets"),
+            p("XC81B", .cancelled, nil, "Priya Nair", "604-555-0109", "priya@example.com",
+              "6551 No. 3 Rd, Richmond, V6Y 2B6", "1 item — Monitors", requests: "Oct 11: Cancel requested — Already dropped it off"),
+        ].enumerated().map { i, p in var p = p; p.bookedIso = String(format: "2026-10-%02dT10:00:00Z", 14 - i); return p })
     }
 
     static func apply(_ set: [String: String], to code: String, in pickups: inout [Pickup]) {
         guard let i = pickups.firstIndex(where: { $0.code == code }) else { return }
         if let date = set["pickupDate"] { pickups[i].pickupDate = date.isEmpty ? nil : date }
         if let s = set["status"], let status = PickupStatus(rawValue: s) { pickups[i].status = status }
-        if [.recycled, .cancelled].contains(pickups[i].status) { pickups.remove(at: i) }
+        if let note = set["crewNote"] { pickups[i].crewNotes += (pickups[i].crewNotes.isEmpty ? "" : "\n") + "Today: " + note }
     }
 }

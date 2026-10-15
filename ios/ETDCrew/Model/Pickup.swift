@@ -7,6 +7,19 @@ enum PickupStatus: String, Codable, Hashable {
     case recycled
     case cancelled
 
+    /// Order used for sections in the All tab.
+    static let allInOrder: [PickupStatus] = [.pending, .scheduled, .pickedUp, .recycled, .cancelled]
+
+    var systemImage: String {
+        switch self {
+        case .pending: "tray.full"
+        case .scheduled: "calendar"
+        case .pickedUp: "shippingbox"
+        case .recycled: "arrow.3.trianglepath"
+        case .cancelled: "xmark.circle"
+        }
+    }
+
     var title: String {
         switch self {
         case .pending: "New"
@@ -31,7 +44,8 @@ struct Pickup: Codable, Identifiable, Hashable {
     let load: String
     let notes: String
     let requests: String
-    let crewNotes: String
+    var crewNotes: String
+    var bookedIso: String? = nil    // for sorting newest first
 
     var id: String { code }
     var firstName: String { name.split(separator: " ").first.map(String.init) ?? "there" }

@@ -12,6 +12,8 @@ struct PickupDetailView: View {
     @State private var missing = false
     @State private var missReason = ""
     @State private var confirmCancel = false
+    @State private var noting = false
+    @State private var noteText = ""
 
     private var pickup: Pickup? { store.pickups.first { $0.code == code } }
 
@@ -61,7 +63,7 @@ struct PickupDetailView: View {
                 Button { scheduling = true } label: {
                     LabeledContent("Pickup day") {
                         Text(p.pickupDate.map { Day.label($0, today: store.today) } ?? "Not scheduled")
-                            .foregroundStyle(p.pickupDate == nil ? .orange : .secondary)
+                            .foregroundStyle(p.pickupDate == nil && p.status == .pending ? .orange : .secondary)
                     }
                 }
                 .tint(.primary)
@@ -87,6 +89,13 @@ struct PickupDetailView: View {
         } message: {
             Text("It goes back to To Schedule with your note, so it can get a new day.")
         }
+        .alert("Add a crew note", isPresented: $noting) {
+            TextField("Note", text: $noteText)
+            Button("Cancel", role: .cancel) {}
+            Button("Add") { Task { await store.addNote(p, noteText) } }
+        } message: {
+            Text("Saved on the booking in the sheet. Customers never see crew notes.")
+        }
         .confirmationDialog("Cancel \(p.displayName)’s pickup?", isPresented: $confirmCancel, titleVisibility: .visible) {
             Button("Cancel Booking", role: .destructive) { Task { await store.cancel(p) } }
         } message: {
@@ -97,19 +106,32 @@ struct PickupDetailView: View {
     @ViewBuilder private func actions(_ p: Pickup) -> some View {
         switch p.status {
         case .scheduled:
-            BigButton(title: "Mark Picked Up", systemImage: "checkmark.circle.fill", style: .primary) {
-                Task { await store.markPickedUp(p) }
-            }
+            BigButton(title: "Mark Picked Up", systemImage: "checkmark.circle.fill") { Task { await store.markPickedUp(p) } }
             Button("Couldn’t Pick Up", systemImage: "xmark.circle") { missReason = ""; missing = true }
             Button("Change Pickup Day", systemImage: "calendar") { scheduling = true }
         case .pending:
-            BigButton(title: "Schedule Pickup", systemImage: "calendar.badge.plus", style: .primary) { scheduling = true }
+            BigButton(title: "Schedule Pickup", systemImage: "calendar.badge.plus") { scheduling = true }
+            Button("Mark Picked Up Now", systemImage: "checkmark.circle") { Task { await store.markPickedUp(p) } }
         case .pickedUp:
-            BigButton(title: "Mark Recycled", systemImage: "arrow.3.trianglepath", style: .primary) {
-                Task { await store.markRecycled(p) }
+            BigButton(title: "Mark Recycled", systemImage: "arrow.3.trianglepath") { Task { await store.markRecycled(p) } }
+            Button("Undo Pickup", systemImage: "arrow.uturn.backward") { Task { await store.undoPickup(p) } }
+        case .recycled:
+            BigButton(title: "Reopen as Picked Up", systemImage: "arrow.uturn.backward") { Task { await store.reopen(p) } }
+        case .cancelled:
+            BigButton(title: "Reopen Booking", systemImage: "arrow.uturn.backward") { Task { await store.reopen(p) } }
+        }
+        Button("Add Crew Note", systemImage: "square.and.pencil") { noteText = ""; noting = true }
+        Menu {
+            ForEach(PickupStatus.allInOrder, id: \.self) { s in
+                Button {
+                    Task { await store.setStatus(p, to: s) }
+                } label: {
+                    Label(s.title, systemImage: s == p.status ? "checkmark" : s.systemImage)
+                }
+                .disabled(s == p.status)
             }
-        case .recycled, .cancelled:
-            EmptyView()
+        } label: {
+            Label("Change Status", systemImage: "arrow.left.arrow.right")
         }
         if p.status == .scheduled || p.status == .pending {
             Button("Cancel Booking", systemImage: "trash", role: .destructive) { confirmCancel = true }

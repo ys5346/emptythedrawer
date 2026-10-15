@@ -9,6 +9,8 @@ struct PickupListScreen: View {
     @State private var missing: Pickup?
     @State private var missReason = ""
     @State private var confirmSignOut = false
+    @State private var search = ""
+    @State private var filter: PickupStatus?
 
     var body: some View {
         NavigationStack {
@@ -24,12 +26,27 @@ struct PickupListScreen: View {
             .navigationTitle(title)
             .navigationDestination(for: String.self) { code in PickupDetailView(code: code) }
             .refreshable { await store.refresh() }
+            .modifier(SearchIfAll(enabled: tab == .all, text: $search))
             .overlay { if store.hasLoaded && items.isEmpty { empty } }
             .overlay { if !store.hasLoaded { ProgressView("Loading pickups…") } }
             .toolbar {
                 if tab == .today, let route = store.todaysRoute {
                     ToolbarItem(placement: .topBarTrailing) {
                         Button { openURL(route) } label: { Label("Route", systemImage: "point.topleft.down.to.point.bottomright.curvepath.fill") }
+                    }
+                }
+                if tab == .all {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Menu {
+                            Picker("Show", selection: $filter) {
+                                Label("All Bookings", systemImage: "list.bullet").tag(PickupStatus?.none)
+                                ForEach(PickupStatus.allInOrder, id: \.self) { s in
+                                    Label(s.title, systemImage: s.systemImage).tag(PickupStatus?.some(s))
+                                }
+                            }
+                        } label: {
+                            Image(systemName: filter == nil ? "line.3.horizontal.decrease.circle" : "line.3.horizontal.decrease.circle.fill")
+                        }
                     }
                 }
                 ToolbarItem(placement: .topBarLeading) {
@@ -82,13 +99,29 @@ struct PickupListScreen: View {
             if !store.pickedUp.isEmpty {
                 Section { rows(store.pickedUp) } footer: { Text("Swipe left to mark a load recycled once it’s dropped off at ERA.") }
             }
+        case .all:
+            ForEach(PickupStatus.allInOrder, id: \.self) { status in
+                let group = allMatches.filter { $0.status == status }
+                if !group.isEmpty {
+                    Section { rows(group) } header: { Label("\(status.title) · \(group.count)", systemImage: status.systemImage) }
+                }
+            }
+        }
+    }
+
+    /// The All tab, after search and the status filter.
+    private var allMatches: [Pickup] {
+        let q = search.trimmingCharacters(in: .whitespaces).lowercased()
+        return store.all.filter { p in
+            (filter == nil || p.status == filter) &&
+            (q.isEmpty || [p.name, p.address, p.code, p.phone, p.email, p.load].contains { $0.lowercased().contains(q) })
         }
     }
 
     private func rows(_ list: [Pickup]) -> some View {
         ForEach(list) { p in
             NavigationLink(value: p.code) {
-                PickupRow(pickup: p, showDate: tab == .today && store.isOverdue(p))
+                PickupRow(pickup: p, showDate: tab == .today && store.isOverdue(p), showStatus: tab == .all)
             }
             .swipeActions(edge: .trailing, allowsFullSwipe: true) { trailingActions(p) }
             .swipeActions(edge: .leading, allowsFullSwipe: false) { leadingActions(p) }
@@ -97,28 +130,42 @@ struct PickupListScreen: View {
         }
     }
 
+    /// Swipe left: the main next step for this booking's status.
     @ViewBuilder private func trailingActions(_ p: Pickup) -> some View {
-        switch tab {
-        case .today, .upcoming:
+        switch p.status {
+        case .scheduled:
             Button { Task { await store.markPickedUp(p) } } label: { Label("Picked Up", systemImage: "checkmark") }
                 .tint(.green)
-        case .schedule:
+        case .pending:
             Button { scheduling = p } label: { Label("Schedule", systemImage: "calendar.badge.plus") }
                 .tint(.accentColor)
         case .pickedUp:
             Button { Task { await store.markRecycled(p) } } label: { Label("Recycled", systemImage: "arrow.3.trianglepath") }
                 .tint(.ink)
+        case .recycled, .cancelled:
+            Button { Task { await store.reopen(p) } } label: { Label("Reopen", systemImage: "arrow.uturn.backward") }
+                .tint(.blue)
         }
     }
 
+    /// Swipe right: the other common steps.
     @ViewBuilder private func leadingActions(_ p: Pickup) -> some View {
-        if tab == .today {
-            Button { missReason = ""; missing = p } label: { Label("Couldn’t", systemImage: "xmark") }
-                .tint(.orange)
-        }
-        if tab == .upcoming || tab == .today {
+        switch p.status {
+        case .scheduled:
+            if store.isOverdue(p) || p.pickupDate == store.today {
+                Button { missReason = ""; missing = p } label: { Label("Couldn’t", systemImage: "xmark") }
+                    .tint(.orange)
+            }
             Button { scheduling = p } label: { Label("Date", systemImage: "calendar") }
                 .tint(.indigo)
+        case .pending:
+            Button { Task { await store.markPickedUp(p) } } label: { Label("Picked Up", systemImage: "checkmark") }
+                .tint(.green)
+        case .pickedUp:
+            Button { Task { await store.undoPickup(p) } } label: { Label("Undo", systemImage: "arrow.uturn.backward") }
+                .tint(.gray)
+        case .recycled, .cancelled:
+            EmptyView()
         }
     }
 
@@ -130,6 +177,7 @@ struct PickupListScreen: View {
         case .upcoming: "Upcoming"
         case .schedule: "To Schedule"
         case .pickedUp: "Picked Up"
+        case .all: "All Bookings"
         }
     }
 
@@ -139,10 +187,11 @@ struct PickupListScreen: View {
         case .upcoming: store.upcoming
         case .schedule: store.toSchedule
         case .pickedUp: store.pickedUp
+        case .all: allMatches
         }
     }
 
-    private var empty: some View {
+    @ViewBuilder private var empty: some View {
         switch tab {
         case .today:
             ContentUnavailableView("Nothing Today", systemImage: "sun.max", description: Text("No pickups are scheduled for today. New bookings wait in To Schedule."))
@@ -152,6 +201,12 @@ struct PickupListScreen: View {
             ContentUnavailableView("All Caught Up", systemImage: "checkmark.circle", description: Text("Every booking has a pickup day."))
         case .pickedUp:
             ContentUnavailableView("Nothing Waiting", systemImage: "shippingbox", description: Text("Picked-up loads show here until they’re recycled at ERA."))
+        case .all:
+            if search.isEmpty && filter == nil {
+                ContentUnavailableView("No Bookings Yet", systemImage: "list.bullet", description: Text("Bookings from the website show up here."))
+            } else {
+                ContentUnavailableView.search(text: search)
+            }
         }
     }
 }
@@ -159,6 +214,7 @@ struct PickupListScreen: View {
 struct PickupRow: View {
     let pickup: Pickup
     var showDate = false
+    var showStatus = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
@@ -166,9 +222,13 @@ struct PickupRow: View {
                 Text(pickup.displayName)
                     .font(.headline)
                 Spacer()
-                Text(pickup.code)
-                    .font(.caption.weight(.semibold).monospaced())
-                    .foregroundStyle(.secondary)
+                if showStatus {
+                    StatusPill(status: pickup.status)
+                } else {
+                    Text(pickup.code)
+                        .font(.caption.weight(.semibold).monospaced())
+                        .foregroundStyle(.secondary)
+                }
             }
             Text(pickup.shortAddress)
                 .font(.subheadline)
@@ -214,5 +274,19 @@ struct Tag: View {
             .padding(.horizontal, 7)
             .padding(.vertical, 3)
             .background(color.opacity(0.12), in: .capsule)
+    }
+}
+
+
+/// Adds a search field only on the All tab.
+struct SearchIfAll: ViewModifier {
+    let enabled: Bool
+    @Binding var text: String
+    func body(content: Content) -> some View {
+        if enabled {
+            content.searchable(text: $text, prompt: "Name, address, code or phone")
+        } else {
+            content
+        }
     }
 }

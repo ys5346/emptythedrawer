@@ -1,6 +1,6 @@
 import SwiftUI
 
-enum CrewTab: Hashable { case today, upcoming, schedule, pickedUp }
+enum CrewTab: Hashable { case today, upcoming, schedule, pickedUp, all }
 
 struct MainView: View {
     @Environment(CrewStore.self) private var store
@@ -23,6 +23,9 @@ struct MainView: View {
             PickupListScreen(tab: .pickedUp)
                 .tabItem { Label("Picked Up", systemImage: "shippingbox.fill") }
                 .tag(CrewTab.pickedUp)
+            PickupListScreen(tab: .all)
+                .tabItem { Label("All", systemImage: "list.bullet") }
+                .tag(CrewTab.all)
         }
         .overlay(alignment: .bottom) { ToastView() }
         .task { await store.refresh() }

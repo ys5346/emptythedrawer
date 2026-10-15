@@ -35,6 +35,8 @@ final class CrewStore {
         pickups.filter { $0.status == .pending || ($0.status == .scheduled && $0.pickupDate == nil) }
     }
     var pickedUp: [Pickup] { pickups.filter { $0.status == .pickedUp } }
+    /// Every booking, newest first.
+    var all: [Pickup] { pickups.sorted { ($0.bookedIso ?? "") > ($1.bookedIso ?? "") } }
 
     func isOverdue(_ p: Pickup) -> Bool { p.status == .scheduled && (p.pickupDate ?? today) < today }
 
@@ -99,6 +101,24 @@ final class CrewStore {
 
     func markPickedUp(_ p: Pickup) async { await update(p, set: ["status": "picked_up"], done: "Picked up · customer emailed") }
     func markRecycled(_ p: Pickup) async { await update(p, set: ["status": "recycled"], done: "Marked recycled") }
+    func undoPickup(_ p: Pickup) async {
+        await update(p, set: ["status": p.pickupDate == nil ? "new" : "scheduled", "crewNote": "Pickup undone"], done: "Pickup undone")
+    }
+    func reopen(_ p: Pickup) async {
+        let to: PickupStatus = p.status == .recycled ? .pickedUp : (p.pickupDate == nil ? .pending : .scheduled)
+        await update(p, set: ["status": to.rawValue, "crewNote": "Reopened"], done: "Reopened as \(to.title)")
+    }
+    func setStatus(_ p: Pickup, to status: PickupStatus) async {
+        guard status != p.status else { return }
+        var set = ["status": status.rawValue]
+        if status == .pending { set["pickupDate"] = "" }
+        await update(p, set: set, done: "Status changed to \(status.title)")
+    }
+    func addNote(_ p: Pickup, _ note: String) async {
+        let text = note.trimmingCharacters(in: .whitespaces)
+        guard !text.isEmpty else { return }
+        await update(p, set: ["crewNote": text], done: "Note added")
+    }
     func schedule(_ p: Pickup, on date: Date) async -> Bool {
         let iso = Day.iso(date)
         return await update(p, set: ["pickupDate": iso, "status": "scheduled"],
