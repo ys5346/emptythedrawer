@@ -145,9 +145,9 @@ function Manage({ initialCode }) {
       'Details': note.trim() || '—'
     };
     if (booking) {
-      fields['Booking'] = [booking.firstName, booking.area, STATUS_TEXT[booking.status][0], booking.pickupLabel && 'pickup ' + booking.pickupLabel].filter(Boolean).join(' · ');
+      fields['Booking status'] = [STATUS_TEXT[booking.status][0], booking.pickupLabel && 'pickup ' + booking.pickupLabel].filter(Boolean).join(' · ');
     } else {
-      fields['Booking'] = "Couldn't check the bookings sheet — look it up by code";
+      fields['Booking status'] = "Couldn't check the bookings sheet — look it up by code";
     }
     setSending(true); setSendErr('');
     try {
@@ -198,19 +198,12 @@ function Manage({ initialCode }) {
 
       ${booking && html`
         <div class="reveal">
-          <${Group} title=${booking.firstName ? `Hi ${booking.firstName}` : 'Your booking'}>
+          <${Group} title="Your booking">
             <div class="status-head">
               <span class=${'status-pill ' + booking.status}>${STATUS_TEXT[booking.status][0]}</span>
               <p>${STATUS_TEXT[booking.status][1]}</p>
             </div>
             ${booking.status !== 'cancelled' && html`<${Timeline} booking=${booking} />`}
-            ${(booking.area || booking.load) && html`
-              <div class="row static">
-                <div class="row-text">
-                  ${booking.area && html`<div class="row-label">Pickup in ${booking.area}</div>`}
-                  ${booking.load && html`<div class="row-sub">${booking.load}</div>`}
-                </div>
-              </div>`}
             ${booking.lastRequest && html`
               <div class="row static">
                 <div class="row-text"><div class="row-label">Your latest request</div><div class="row-sub">${booking.lastRequest} · we'll confirm by email or text</div></div>

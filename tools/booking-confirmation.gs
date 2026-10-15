@@ -4,8 +4,9 @@
  * The website talks to this script for three things:
  *   1. New booking  (POST)  → adds a row to the "Bookings" tab and emails the
  *                              customer their confirmation number.
- *   2. Look up      (GET ?action=lookup&code=AB12C) → returns that booking's
- *                              status and pickup date for the "Manage your booking" page.
+ *   2. Look up      (GET ?action=lookup&code=AB12C) → returns only that booking's
+ *                              status and dates for the "Manage your booking" page —
+ *                              never the customer's name, address, contact details or items.
  *   3. Request      (POST type=request) → notes a cancel / reschedule / change
  *                              request on the booking's row.
  *
@@ -34,7 +35,7 @@ const CONFIG = {
   timeZone: 'America/Vancouver',
 };
 
-const VERSION = '2026-10-14c';
+const VERSION = '2026-10-14d';
 
 const CODE_RE = /^[A-HJ-NP-Z]{2}\d{2}[A-HJ-NP-Z]$/;
 const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[a-z]{2,}$/i;
@@ -140,21 +141,19 @@ function lookup_(code) {
   const pickup = get('pickupDate') instanceof Date ? get('pickupDate') : null;
   let status = normStatus_(get('status'));
   if (status === 'new' && pickup) status = 'scheduled';
-  const parts = String(get('address') || '').split(',').map(s => s.trim()).filter(Boolean);
   const requests = String(get('requests') || '').split('\n').filter(Boolean);
   const booked = get('bookedAt') instanceof Date ? get('bookedAt') : null;
 
+  // Status and dates only. Nothing that identifies the customer leaves the sheet.
   return {
     found: true,
     code,
-    firstName: String(get('name') || '').split(' ')[0],
     status,                                                          // new | scheduled | picked_up | recycled | cancelled
     pickupDate: pickup ? fmt_(pickup, 'yyyy-MM-dd') : null,
     pickupLabel: pickup ? fmt_(pickup, 'EEEE, MMMM d') : null,
     bookedLabel: booked ? fmt_(booked, 'MMMM d') : null,
-    area: parts.length >= 2 ? parts[parts.length - 2] : '',         // city only, never the street
-    load: String(get('load') || ''),
-    lastRequest: requests.length ? requests[requests.length - 1] : null,
+    // e.g. "Oct 14: Cancel requested" — the request type and date, never what they wrote.
+    lastRequest: requests.length ? requests[requests.length - 1].split(' — ')[0] : null,
   };
 }
 
