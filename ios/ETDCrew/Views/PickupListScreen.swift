@@ -114,13 +114,11 @@ struct PickupListScreen: View {
             } else {
                 if let next = route.first {
                     Section {
-                        NextStopCard(pickup: next, overdue: store.isOverdue(next),
+                        NextStopCard(pickup: next, position: "1 of \(route.count)", overdue: store.isOverdue(next),
                                      onDetails: { path.append(next.code) },
                                      onMyWay: { Task { await store.onMyWay(next) } },
                                      onPickedUp: { pickingUp = next })
                             .listRowInsets(EdgeInsets())
-                    } header: {
-                        Text("Next Stop · 1 of \(route.count)")
                     }
                 }
                 if route.count > 1 {
@@ -271,9 +269,9 @@ struct PickupRow: View {
             if let stopNumber {
                 Text("\(stopNumber)")
                     .font(.subheadline.weight(.bold).monospacedDigit())
-                    .foregroundStyle(.white)
+                    .foregroundStyle(Color(.systemBackground))
                     .frame(width: 26, height: 26)
-                    .background(Color.ink, in: .circle)
+                    .background(.tint, in: .circle)
             }
             details
         }
@@ -366,85 +364,5 @@ struct SwipeHint: View {
         Label(text, systemImage: "hand.draw")
             .font(.footnote)
             .foregroundStyle(.secondary)
-    }
-}
-
-
-/// The stop the truck is heading to now, with the buttons the driver needs at the door.
-struct NextStopCard: View {
-    let pickup: Pickup
-    var overdue = false
-    let onDetails: () -> Void
-    let onMyWay: () -> Void
-    let onPickedUp: () -> Void
-    @Environment(\.openURL) private var openURL
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            Button(action: onDetails) {
-                HStack(alignment: .top) {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(pickup.displayName).font(.title2.bold())
-                        Text(pickup.shortAddress).font(.body).foregroundStyle(.secondary)
-                        if !pickup.load.isEmpty {
-                            Text(pickup.load).font(.subheadline).foregroundStyle(.secondary)
-                        }
-                    }
-                    Spacer(minLength: 8)
-                    Image(systemName: "chevron.right")
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(.tertiary)
-                        .padding(.top, 6)
-                }
-                .contentShape(.rect)
-            }
-            .buttonStyle(.plain)
-
-            if overdue || pickup.status == .onTheWay {
-                HStack(spacing: 6) {
-                    if overdue, let d = Day.date(pickup.pickupDate) {
-                        Tag(text: "Was due \(d.formatted(.dateTime.month(.abbreviated).day()))", systemImage: "clock.badge.exclamationmark", color: .red)
-                    }
-                    if pickup.status == .onTheWay { Tag(text: "On the way", systemImage: "location.fill", color: .purple) }
-                }
-            }
-            if !pickup.notes.isEmpty {
-                Callout(title: "Driver notes", text: pickup.notes, systemImage: "note.text", color: .orange)
-            }
-            if let r = pickup.latestRequest {
-                Callout(title: "Customer request", text: r, systemImage: "exclamationmark.bubble.fill", color: .red)
-            }
-
-            HStack(spacing: 10) {
-                QuickAction(title: "Directions", systemImage: "car.fill", enabled: !pickup.address.isEmpty) {
-                    openURL(pickup.directionsURL)
-                }
-                .tint(.blue)
-                QuickAction(title: "Call", systemImage: "phone.fill", enabled: !pickup.phoneDigits.isEmpty) {
-                    if let url = URL(string: "tel:\(pickup.phoneDigits)") { openURL(url) }
-                }
-                .tint(.green)
-                QuickAction(title: pickup.status == .onTheWay ? "On the Way" : "On My Way", systemImage: "location.fill",
-                            enabled: pickup.status == .scheduled, action: onMyWay)
-                .tint(.purple)
-            }
-            BigButton(title: "Picked Up", systemImage: "checkmark.circle.fill", action: onPickedUp)
-                .tint(.green)
-        }
-        .padding(16)
-    }
-}
-
-/// A highlighted note on the Next Stop card.
-private struct Callout: View {
-    let title: String
-    let text: String
-    let systemImage: String
-    let color: Color
-    var body: some View {
-        NoteRow(title: title, text: text, systemImage: systemImage, color: color)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(12)
-            .background(color.opacity(0.1), in: .rect(cornerRadius: 12, style: .continuous))
     }
 }

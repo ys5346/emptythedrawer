@@ -17,6 +17,7 @@
 		8C934FC5EFAD272A48462536 /* PickedUpSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8AEA7327118F76A2AAA65D1E /* PickedUpSheet.swift */; };
 		95627300DE0C7902A75C9563 /* NewBookingSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 80E0DBAB55A24214D9F9DD8E /* NewBookingSheet.swift */; };
 		979A7CB145F78715FDDD7C06 /* CrewAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6979B6829B90E71F0CFF771 /* CrewAPI.swift */; };
+		9AFAA1BAAA2C5E22519DE2E4 /* NextStopCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 694ECC291A78698BF3ADD0BC /* NextStopCard.swift */; };
 		ACC0F6738FBF04BABA85C86E /* ScheduleSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F71646AE7831B0D44C704D1 /* ScheduleSheet.swift */; };
 		AE27AF6F1F134BE0CACAB5C4 /* Pickup.swift in Sources */ = {isa = PBXBuildFile; fileRef = 166593D7D56979B3F75F4173 /* Pickup.swift */; };
 		BE539C68EF7F8B14F6A481CD /* LocalStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3E653B06A70720E696E3BE1D /* LocalStore.swift */; };
@@ -34,6 +35,7 @@
 		506F2D4CB16EEBB351024D30 /* LoginView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginView.swift; sourceTree = "<group>"; };
 		527D707230BA608FC23F3F06 /* DemoData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DemoData.swift; sourceTree = "<group>"; };
 		5939360668E2DF1CAC4AE899 /* ETDCrewApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ETDCrewApp.swift; sourceTree = "<group>"; };
+		694ECC291A78698BF3ADD0BC /* NextStopCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NextStopCard.swift; sourceTree = "<group>"; };
 		7F71646AE7831B0D44C704D1 /* ScheduleSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScheduleSheet.swift; sourceTree = "<group>"; };
 		80E0DBAB55A24214D9F9DD8E /* NewBookingSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewBookingSheet.swift; sourceTree = "<group>"; };
 		88DCA59AE60024E4B44A04D9 /* Keychain.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Keychain.swift; sourceTree = "<group>"; };
@@ -69,6 +71,7 @@
 				4B8F5A17C0A1FCED8832178E /* MainView.swift */,
 				90CE9EE0E73341EFDE1BB489 /* MessageComposer.swift */,
 				80E0DBAB55A24214D9F9DD8E /* NewBookingSheet.swift */,
+				694ECC291A78698BF3ADD0BC /* NextStopCard.swift */,
 				8AEA7327118F76A2AAA65D1E /* PickedUpSheet.swift */,
 				429520BF9B069DD42EBC8D46 /* PickupDetailView.swift */,
 				9DA533307689E92DC023EE00 /* PickupListScreen.swift */,
@@ -181,6 +184,7 @@
 				221567053F189D4958F8C21F /* MainView.swift in Sources */,
 				7648460075F6448844E03D11 /* MessageComposer.swift in Sources */,
 				95627300DE0C7902A75C9563 /* NewBookingSheet.swift in Sources */,
+				9AFAA1BAAA2C5E22519DE2E4 /* NextStopCard.swift in Sources */,
 				8C934FC5EFAD272A48462536 /* PickedUpSheet.swift in Sources */,
 				AE27AF6F1F134BE0CACAB5C4 /* Pickup.swift in Sources */,
 				0CDFE59946D2EE1321B4F814 /* PickupDetailView.swift in Sources */,
