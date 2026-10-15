@@ -17,6 +17,10 @@
  * The crew passcode lives in Project Settings → Script properties → CREW_PASSCODE.
  * `setup` creates one the first time and prints it in the log.
  *
+ * "On the way" texts go through Twilio. Add these Script properties (never put
+ * them in code): TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_FROM (your Twilio
+ * number, e.g. +16045550100). Without them, customers get an email instead.
+ *
  * You run pickups from the sheet: set each booking's Status (New, Scheduled,
  * Picked up, Recycled, Cancelled) and its Pickup date. The website shows
  * whatever is in the sheet.
@@ -44,7 +48,7 @@ const CONFIG = {
   notifyCustomers: true,          // email customers when a pickup is scheduled and when it's picked up
 };
 
-const VERSION = '2026-10-14f';
+const VERSION = '2026-10-14g';
 
 const CODE_RE = /^[A-HJ-NP-Z]{2}\d{2}[A-HJ-NP-Z]$/;
 const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[a-z]{2,}$/i;
@@ -56,8 +60,8 @@ const COL = {
   notes: 'Driver notes', requests: 'Customer requests', crewNotes: 'Crew notes',
 };
 const HEADERS = ['bookedAt', 'code', 'status', 'pickupDate', 'name', 'email', 'phone', 'address', 'load', 'notes', 'requests', 'crewNotes'];
-const STATUS_KEYS = { new: 'New', scheduled: 'Scheduled', picked_up: 'Picked up', recycled: 'Recycled', cancelled: 'Cancelled' };
-const STATUSES = ['New', 'Scheduled', 'Picked up', 'Recycled', 'Cancelled'];
+const STATUS_KEYS = { new: 'New', scheduled: 'Scheduled', on_the_way: 'On the way', picked_up: 'Picked up', recycled: 'Recycled', cancelled: 'Cancelled' };
+const STATUSES = ['New', 'Scheduled', 'On the way', 'Picked up', 'Recycled', 'Cancelled'];
 
 
 // ---------- web app entry points ----------
@@ -159,7 +163,7 @@ function lookup_(code) {
   return {
     found: true,
     code,
-    status,                                                          // new | scheduled | picked_up | recycled | cancelled
+    status,                                                          // new | scheduled | on_the_way | picked_up | recycled | cancelled
     pickupDate: pickup ? fmt_(pickup, 'yyyy-MM-dd') : null,
     pickupLabel: pickup ? fmt_(pickup, 'EEEE, MMMM d') : null,
     bookedLabel: booked ? fmt_(booked, 'MMMM d') : null,
@@ -173,6 +177,7 @@ function normStatus_(s) {
   if (t.startsWith('cancel')) return 'cancelled';
   if (t.startsWith('recycl') || t.startsWith('refurb') || t.startsWith('done') || t.startsWith('complete')) return 'recycled';
   if (t.startsWith('picked')) return 'picked_up';
+  if (t.startsWith('on the way') || t.startsWith('on_the_way') || t.startsWith('en route')) return 'on_the_way';
   if (t.startsWith('sched') || t.startsWith('confirm')) return 'scheduled';
   return 'new';
 }
@@ -280,7 +285,8 @@ function crewUpdate_(code, set) {
     if (!label) return { ok: false, error: 'status' };
     sh.getRange(r, c.status).setValue(label);
     // Only a real pickup emails the customer — undoing a "Recycled" mark never re-sends the thank-you.
-    if (set.status === 'picked_up' && (beforeStatus === 'new' || beforeStatus === 'scheduled')) notify = 'picked_up';
+    if (set.status === 'picked_up' && ['new', 'scheduled', 'on_the_way'].indexOf(beforeStatus) !== -1) notify = 'picked_up';
+    if (set.status === 'on_the_way' && beforeStatus !== 'on_the_way') notify = 'on_the_way';
     if (set.status !== 'scheduled' && notify === 'scheduled') notify = null;
   }
   if (set.crewNote) {
@@ -289,16 +295,56 @@ function crewUpdate_(code, set) {
     cell.setValue((prev ? prev + '\n' : '') + `${fmt_(new Date(), 'MMM d')}: ${clip_(set.crewNote, 300)}`);
   }
 
-  if (notify && CONFIG.notifyCustomers && EMAIL_RE.test(String(get('email') || ''))) {
-    try {
-      const day = set.pickupDate ? set.pickupDate.split('-').map(Number) : null;
-      sendStatusEmail_({
-        code, name: String(get('name') || ''), email: String(get('email')),
-        pickupLabel: day ? fmt_(new Date(day[0], day[1] - 1, day[2], 12), 'EEEE, MMMM d') : '',
-      }, notify);
-    } catch (err) { recordError_('status-email', err); }
+  // How the customer was told: 'sms', 'email' or 'none'. "On the way" prefers a text.
+  let notified = 'none';
+  if (notify && CONFIG.notifyCustomers) {
+    const name = String(get('name') || '');
+    if (notify === 'on_the_way' && twilioReady_() && toE164_(get('phone'))) {
+      try {
+        sendSms_(toE164_(get('phone')), `Hi ${name.split(' ')[0] || 'there'}, it's Empty the Drawer. We're a few stops away to pick up your electronics (${code}). Please make sure they're by the door. Thanks!`);
+        notified = 'sms';
+      } catch (err) { recordError_('sms', err); }
+    }
+    if (notified === 'none' && EMAIL_RE.test(String(get('email') || ''))) {
+      try {
+        const day = set.pickupDate ? set.pickupDate.split('-').map(Number) : null;
+        sendStatusEmail_({
+          code, name, email: String(get('email')),
+          pickupLabel: day ? fmt_(new Date(day[0], day[1] - 1, day[2], 12), 'EEEE, MMMM d') : '',
+        }, notify);
+        notified = 'email';
+      } catch (err) { recordError_('status-email', err); }
+    }
   }
-  return { ok: true };
+  return { ok: true, notified };
+}
+
+
+// ---------- text messages (Twilio) ----------
+
+function twilioReady_() {
+  const p = PropertiesService.getScriptProperties();
+  return !!(p.getProperty('TWILIO_ACCOUNT_SID') && p.getProperty('TWILIO_AUTH_TOKEN') && p.getProperty('TWILIO_FROM'));
+}
+
+/** Canadian/US numbers to +1XXXXXXXXXX; anything else is skipped. */
+function toE164_(raw) {
+  const d = String(raw || '').replace(/\D/g, '');
+  if (d.length === 10) return '+1' + d;
+  if (d.length === 11 && d[0] === '1') return '+' + d;
+  return '';
+}
+
+function sendSms_(to, body) {
+  const p = PropertiesService.getScriptProperties();
+  const sid = p.getProperty('TWILIO_ACCOUNT_SID');
+  const res = UrlFetchApp.fetch(`https://api.twilio.com/2010-04-01/Accounts/${sid}/Messages.json`, {
+    method: 'post',
+    headers: { Authorization: 'Basic ' + Utilities.base64Encode(sid + ':' + p.getProperty('TWILIO_AUTH_TOKEN')) },
+    payload: { To: to, From: p.getProperty('TWILIO_FROM'), Body: body },
+    muteHttpExceptions: true,
+  });
+  if (res.getResponseCode() >= 300) throw new Error('Twilio ' + res.getResponseCode() + ': ' + res.getContentText().slice(0, 200));
 }
 
 
@@ -422,7 +468,14 @@ Empty the Drawer`;
 function sendStatusEmail_(b, kind) {
   const first = b.name.split(' ')[0] || 'there';
   const manageUrl = CONFIG.siteUrl + 'manage.html?code=' + b.code;
-  const copy = kind === 'scheduled' ? {
+  const copy = kind === 'on_the_way' ? {
+    subject: `We're on our way (${b.code})`,
+    title: "We're on our way",
+    lines: [
+      `The truck is a few stops away to pick up your electronics (${b.code}).`,
+      "Please make sure everything is by your door, in your lobby or by the garage. You don't need to be home.",
+    ],
+  } : kind === 'scheduled' ? {
     subject: `Your pickup is on ${b.pickupLabel}`,
     title: `See you ${b.pickupLabel}`,
     lines: [
@@ -486,6 +539,7 @@ function status_() {
     bookingsInSheet: bookings,
     sendAsDonationsReady: sendAsReady,
     crewPasscodeSet: !!props.getProperty('CREW_PASSCODE'),
+    twilioReady: twilioReady_(),
     emailsLeftToday: MailApp.getRemainingDailyQuota(),
     lastError: JSON.parse(props.getProperty('LAST_ERROR') || 'null'),
   };
@@ -500,6 +554,7 @@ function setup() {
     props.setProperty('CREW_PASSCODE', String(Math.floor(100000 + Math.random() * 900000)));
   }
   console.log('Crew app passcode: ' + props.getProperty('CREW_PASSCODE') + '  (change it in Project Settings → Script properties)');
+  console.log('Twilio texts: ' + (twilioReady_() ? 'ready' : 'not set up — add TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN and TWILIO_FROM in Script properties'));
   console.log('Bookings sheet: ' + sh.getParent().getUrl());
   console.log('Send as ' + CONFIG.fromAddress + ': ' + (GmailApp.getAliases().indexOf(CONFIG.fromAddress) !== -1 ? 'ready' : 'NOT set up in Gmail yet'));
   console.log('Emails left today: ' + MailApp.getRemainingDailyQuota());

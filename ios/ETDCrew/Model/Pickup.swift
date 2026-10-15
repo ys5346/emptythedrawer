@@ -3,17 +3,22 @@ import Foundation
 enum PickupStatus: String, Codable, Hashable {
     case pending = "new"
     case scheduled
+    case onTheWay = "on_the_way"
     case pickedUp = "picked_up"
     case recycled
     case cancelled
 
     /// Order used for sections in the All tab.
-    static let allInOrder: [PickupStatus] = [.pending, .scheduled, .pickedUp, .recycled, .cancelled]
+    static let allInOrder: [PickupStatus] = [.pending, .scheduled, .onTheWay, .pickedUp, .recycled, .cancelled]
+
+    /// Still waiting to be collected.
+    var isActive: Bool { self == .pending || self == .scheduled || self == .onTheWay }
 
     var systemImage: String {
         switch self {
         case .pending: "tray.full"
         case .scheduled: "calendar"
+        case .onTheWay: "car.fill"
         case .pickedUp: "shippingbox"
         case .recycled: "arrow.3.trianglepath"
         case .cancelled: "xmark.circle"
@@ -24,6 +29,7 @@ enum PickupStatus: String, Codable, Hashable {
         switch self {
         case .pending: "New"
         case .scheduled: "Scheduled"
+        case .onTheWay: "On the Way"
         case .pickedUp: "Picked Up"
         case .recycled: "Recycled"
         case .cancelled: "Cancelled"

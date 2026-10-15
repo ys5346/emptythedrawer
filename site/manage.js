@@ -62,12 +62,14 @@ function Group({ title, hint, children }) {
 const STEPS = [
   { key: 'new', label: 'Booked' },
   { key: 'scheduled', label: 'Pickup scheduled' },
+  { key: 'on_the_way', label: 'On the way' },
   { key: 'picked_up', label: 'Picked up' },
   { key: 'recycled', label: 'Recycled' }
 ];
 const STATUS_TEXT = {
   new: ['Booked', "We'll confirm your pickup day within one business day."],
   scheduled: ['Pickup scheduled', 'Leave everything by your door on pickup day. You don\u2019t need to be home.'],
+  on_the_way: ['On the way', 'The truck is a few stops away. Please make sure everything is by your door.'],
   picked_up: ['Picked up', 'Your devices are on their way to ERA to be wiped and refurbished.'],
   recycled: ['Recycled', 'Every drive was wiped or shredded, and your devices have been refurbished or recycled. Thank you!'],
   cancelled: ['Cancelled', 'This pickup was cancelled.']

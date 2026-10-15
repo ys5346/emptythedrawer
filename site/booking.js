@@ -41,7 +41,7 @@ const FIELDS = [
 const LOAD_TYPES = ['Laptops', 'Desktops', 'Phones', 'Tablets', 'Servers', 'Monitors', 'Networking gear', 'Gaming consoles', 'TVs'];
 
 const STEPS = [
-  { name: 'your details', q: 'Who should the driver ask for?', help: 'Give us an email or a mobile number — whichever you check. We only use it to reach you about the pickup.', keys: ['name', 'email', 'phone'] },
+  { name: 'your details', q: 'Who should the driver ask for?', help: 'Give us an email or a mobile number — whichever you check. We only use it about your pickup, and if you give a mobile we\'ll text you when the truck is on its way.', keys: ['name', 'email', 'phone'] },
   { name: 'the address', q: 'Where are we picking up?', help: 'Our truck runs a 90 km radius around the drop box at 13060 80 Ave, Surrey — roughly Squamish to Chilliwack.', keys: ['addr', 'unit', 'city', 'postal'] },
   { name: 'the load', q: "What's in the load?", help: "A rough count is fine — we're not going to hold you to it.", keys: ['count'] },
   { name: 'checking it over', q: 'Have a quick look', help: 'Check these are right before you book. Use Back to fix anything.', keys: [] }

@@ -24,7 +24,7 @@ final class CrewStore {
     // MARK: Lists for each tab
 
     var dueToday: [Pickup] {
-        pickups.filter { $0.status == .scheduled && ($0.pickupDate ?? "9") <= today }
+        pickups.filter { ($0.status == .scheduled || $0.status == .onTheWay) && ($0.pickupDate ?? "9") <= today }
             .sorted { ($0.pickupDate ?? "") < ($1.pickupDate ?? "") }
     }
     var upcoming: [Pickup] {
@@ -38,7 +38,7 @@ final class CrewStore {
     /// Every booking, newest first.
     var all: [Pickup] { pickups.sorted { ($0.bookedIso ?? "") > ($1.bookedIso ?? "") } }
 
-    func isOverdue(_ p: Pickup) -> Bool { p.status == .scheduled && (p.pickupDate ?? today) < today }
+    func isOverdue(_ p: Pickup) -> Bool { (p.status == .scheduled || p.status == .onTheWay) && (p.pickupDate ?? today) < today }
 
     // MARK: Actions
 
@@ -78,20 +78,24 @@ final class CrewStore {
     }
 
     /// Saves a change to the sheet, then reloads. Returns true on success.
+    /// `tell`: add how the customer was notified to the confirmation, e.g. "· text sent".
     @discardableResult
-    func update(_ p: Pickup, set: [String: String], done message: String) async -> Bool {
+    func update(_ p: Pickup, set: [String: String], done message: String, tell: Bool = false) async -> Bool {
         guard let passcode else { return false }
         savingCode = p.code
         defer { savingCode = nil }
         do {
+            let notified: String
             if isDemo {
                 try await Task.sleep(for: .milliseconds(350))
                 DemoData.apply(set, to: p.code, in: &pickups)
+                notified = set["status"] == "on_the_way" && !p.phoneDigits.isEmpty ? "sms" : (p.email.isEmpty ? "none" : "email")
             } else {
-                try await CrewAPI(passcode: passcode).update(code: p.code, set: set)
+                notified = try await CrewAPI(passcode: passcode).update(code: p.code, set: set)
                 await refresh()
             }
-            toast = message
+            let how = ["sms": "text sent", "email": "customer emailed"][notified] ?? "customer not notified"
+            toast = tell ? "\(message) · \(how)" : message
             return true
         } catch {
             toast = "Didn’t save. Check your connection and try again."
@@ -99,7 +103,8 @@ final class CrewStore {
         }
     }
 
-    func markPickedUp(_ p: Pickup) async { await update(p, set: ["status": "picked_up"], done: "Picked up · customer emailed") }
+    func markPickedUp(_ p: Pickup) async { await update(p, set: ["status": "picked_up"], done: "Picked up", tell: true) }
+    func onMyWay(_ p: Pickup) async { await update(p, set: ["status": "on_the_way"], done: "On the way", tell: true) }
     func markRecycled(_ p: Pickup) async { await update(p, set: ["status": "recycled"], done: "Marked recycled") }
     func undoPickup(_ p: Pickup) async {
         await update(p, set: ["status": p.pickupDate == nil ? "new" : "scheduled", "crewNote": "Pickup undone"], done: "Pickup undone")
@@ -122,7 +127,7 @@ final class CrewStore {
     func schedule(_ p: Pickup, on date: Date) async -> Bool {
         let iso = Day.iso(date)
         return await update(p, set: ["pickupDate": iso, "status": "scheduled"],
-                            done: "Scheduled for \(Day.label(iso, today: today)) · customer emailed")
+                            done: "Scheduled for \(Day.label(iso, today: today))", tell: true)
     }
     func missed(_ p: Pickup, reason: String) async {
         let why = reason.trimmingCharacters(in: .whitespaces).isEmpty ? "no reason given" : reason

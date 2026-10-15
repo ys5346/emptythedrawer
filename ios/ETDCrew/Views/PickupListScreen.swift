@@ -87,7 +87,7 @@ struct PickupListScreen: View {
                 Section { rows(todays) } header: { Text(Day.date(store.today)?.formatted(.dateTime.weekday(.wide).month(.wide).day()) ?? "Today") }
             }
             if !store.dueToday.isEmpty {
-                Section {} footer: { SwipeHint(text: "Swipe right on a pickup to mark it picked up. Swipe left to change the day.") }
+                Section {} footer: { SwipeHint(text: "Swipe right to mark picked up. Swipe left for On My Way, which texts the customer, or to change the day.") }
             }
         case .upcoming:
             let days = Dictionary(grouping: store.upcoming, by: { $0.pickupDate ?? "" })
@@ -139,7 +139,7 @@ struct PickupListScreen: View {
     /// Swipe right moves a booking forward. A full swipe does it in one motion.
     @ViewBuilder private func forwardAction(_ p: Pickup) -> some View {
         switch p.status {
-        case .pending, .scheduled:
+        case .pending, .scheduled, .onTheWay:
             Button { Task { await store.markPickedUp(p) } } label: { Label("Picked Up", systemImage: "checkmark") }
                 .tint(.green)
         case .pickedUp:
@@ -154,7 +154,11 @@ struct PickupListScreen: View {
     /// Swipe left shows the other options for this booking.
     @ViewBuilder private func otherActions(_ p: Pickup) -> some View {
         switch p.status {
-        case .scheduled:
+        case .scheduled, .onTheWay:
+            if p.status == .scheduled {
+                Button { Task { await store.onMyWay(p) } } label: { Label("On My Way", systemImage: "location.fill") }
+                    .tint(.purple)
+            }
             Button { scheduling = p } label: { Label("Date", systemImage: "calendar") }
                 .tint(.indigo)
             if store.isOverdue(p) || p.pickupDate == store.today {
@@ -257,6 +261,7 @@ struct PickupRow: View {
         if showDate, let d = pickup.pickupDate, let date = Day.date(d) {
             f.append(("Was due \(date.formatted(.dateTime.month(.abbreviated).day()))", "clock.badge.exclamationmark", .red))
         }
+        if pickup.status == .onTheWay { f.append(("On the way", "location.fill", .purple)) }
         if pickup.latestRequest != nil { f.append(("Customer request", "exclamationmark.bubble.fill", .red)) }
         if !pickup.notes.isEmpty { f.append(("Driver notes", "note.text", .orange)) }
         return f

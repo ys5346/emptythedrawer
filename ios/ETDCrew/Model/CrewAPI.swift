@@ -37,6 +37,7 @@ struct CrewAPI {
     private struct Ack: Decodable {
         let ok: Bool
         let error: String?
+        let notified: String?
     }
 
     let passcode: String
@@ -48,9 +49,12 @@ struct CrewAPI {
     }
 
     /// `set` may contain "status", "pickupDate" (yyyy-MM-dd or "") and "crewNote".
-    func update(code: String, set: [String: String]) async throws {
+    /// Returns how the customer was told about it: "sms", "email" or "none".
+    @discardableResult
+    func update(code: String, set: [String: String]) async throws -> String {
         let r: Ack = try await post(["op": "update", "code": code, "set": set])
         guard r.ok else { throw Failure(code: r.error) }
+        return r.notified ?? "none"
     }
 
     private func post<T: Decodable>(_ body: [String: Any]) async throws -> T {

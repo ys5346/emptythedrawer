@@ -42,7 +42,8 @@ struct PickupDetailView: View {
                     HStack(spacing: 10) {
                         QuickAction(title: "Directions", systemImage: "car.fill", enabled: !p.address.isEmpty) { openURL(appleMaps(p.address)) }
                         QuickAction(title: "Call", systemImage: "phone.fill", enabled: !p.phoneDigits.isEmpty) { openURL(URL(string: "tel:\(p.phoneDigits)")!) }
-                        QuickAction(title: "On My Way", systemImage: "message.fill", enabled: !p.phoneDigits.isEmpty) { openURL(onMyWay(p)) }
+                        QuickAction(title: p.status == .onTheWay ? "On the Way" : "On My Way", systemImage: "location.fill",
+                                    enabled: p.status == .pending || p.status == .scheduled) { Task { await store.onMyWay(p) } }
                         QuickAction(title: "Email", systemImage: "envelope.fill", enabled: !p.email.isEmpty) { openURL(email(p)) }
                     }
                     .padding(14)
@@ -105,7 +106,7 @@ struct PickupDetailView: View {
 
     @ViewBuilder private func actions(_ p: Pickup) -> some View {
         switch p.status {
-        case .scheduled:
+        case .scheduled, .onTheWay:
             BigButton(title: "Mark Picked Up", systemImage: "checkmark.circle.fill") { Task { await store.markPickedUp(p) } }
             Button("Couldn’t Pick Up", systemImage: "xmark.circle") { missReason = ""; missing = true }
             Button("Change Pickup Day", systemImage: "calendar") { scheduling = true }
@@ -133,7 +134,7 @@ struct PickupDetailView: View {
         } label: {
             Label("Change Status", systemImage: "arrow.left.arrow.right")
         }
-        if p.status == .scheduled || p.status == .pending {
+        if p.status.isActive {
             Button("Cancel Booking", systemImage: "trash", role: .destructive) { confirmCancel = true }
         }
     }
@@ -165,12 +166,6 @@ struct PickupDetailView: View {
         var c = URLComponents(string: "http://maps.apple.com/")!
         c.queryItems = [.init(name: "daddr", value: address), .init(name: "dirflg", value: "d")]
         return c.url!
-    }
-
-    private func onMyWay(_ p: Pickup) -> URL {
-        let body = "Hi \(p.firstName), it’s Empty the Drawer. We’re a few stops away to pick up your electronics. Please make sure they’re by the door. Thanks!"
-        let encoded = body.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
-        return URL(string: "sms:\(p.phoneDigits)&body=\(encoded)")!
     }
 
     private func email(_ p: Pickup) -> URL {
@@ -249,6 +244,7 @@ struct StatusPill: View {
             switch status {
             case .pending: return ("New", .orange)
             case .scheduled: return ("Scheduled", .blue)
+            case .onTheWay: return ("On the Way", .purple)
             case .pickedUp: return ("Picked Up", .green)
             case .recycled: return ("Recycled", .teal)
             case .cancelled: return ("Cancelled", .gray)
