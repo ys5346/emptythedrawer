@@ -28,6 +28,16 @@ struct MainView: View {
                 .tag(CrewTab.all)
         }
         .overlay(alignment: .bottom) { ToastView() }
+        .sheet(item: Binding(get: { store.textToSend }, set: { store.textToSend = $0 })) { text in
+            if MessageComposer.canSend {
+                MessageComposer(text: text) { store.textToSend = nil }
+                    .ignoresSafeArea()
+            } else {
+                ContentUnavailableView("Can’t Send Texts", systemImage: "message.badge",
+                                       description: Text("This device can’t send text messages. Call the customer instead."))
+                    .presentationDetents([.medium])
+            }
+        }
         .task { await store.refresh() }
         .onChange(of: scenePhase) { _, phase in
             if phase == .active { Task { await store.refresh() } }

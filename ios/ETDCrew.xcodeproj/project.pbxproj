@@ -12,10 +12,12 @@
 		34F8CAC821DF11AA4D476F11 /* DemoData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 527D707230BA608FC23F3F06 /* DemoData.swift */; };
 		5A9D1EBFCF3E05FF60FEC7DE /* Keychain.swift in Sources */ = {isa = PBXBuildFile; fileRef = 88DCA59AE60024E4B44A04D9 /* Keychain.swift */; };
 		683CF589A036ACDC111110E7 /* LoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 506F2D4CB16EEBB351024D30 /* LoginView.swift */; };
+		7648460075F6448844E03D11 /* MessageComposer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 90CE9EE0E73341EFDE1BB489 /* MessageComposer.swift */; };
 		897B1A604E5594BB51DF8597 /* ETDCrewApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5939360668E2DF1CAC4AE899 /* ETDCrewApp.swift */; };
 		979A7CB145F78715FDDD7C06 /* CrewAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6979B6829B90E71F0CFF771 /* CrewAPI.swift */; };
 		ACC0F6738FBF04BABA85C86E /* ScheduleSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F71646AE7831B0D44C704D1 /* ScheduleSheet.swift */; };
 		AE27AF6F1F134BE0CACAB5C4 /* Pickup.swift in Sources */ = {isa = PBXBuildFile; fileRef = 166593D7D56979B3F75F4173 /* Pickup.swift */; };
+		BE539C68EF7F8B14F6A481CD /* LocalStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3E653B06A70720E696E3BE1D /* LocalStore.swift */; };
 		D30B4CB27EB86B1634978364 /* CrewStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = E8635FDCA7C2206ED2598721 /* CrewStore.swift */; };
 		E001AB9BA106FD11DCBD9E81 /* PickupListScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9DA533307689E92DC023EE00 /* PickupListScreen.swift */; };
 		F1F8C49A2B1C550CCA28712D /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = C9E0F7D10A73722B1719591F /* Assets.xcassets */; };
@@ -24,6 +26,7 @@
 /* Begin PBXFileReference section */
 		166593D7D56979B3F75F4173 /* Pickup.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Pickup.swift; sourceTree = "<group>"; };
 		19FF52877B2A0223335ED6F1 /* ETDCrew.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = ETDCrew.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		3E653B06A70720E696E3BE1D /* LocalStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalStore.swift; sourceTree = "<group>"; };
 		429520BF9B069DD42EBC8D46 /* PickupDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PickupDetailView.swift; sourceTree = "<group>"; };
 		4B8F5A17C0A1FCED8832178E /* MainView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainView.swift; sourceTree = "<group>"; };
 		506F2D4CB16EEBB351024D30 /* LoginView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginView.swift; sourceTree = "<group>"; };
@@ -31,6 +34,7 @@
 		5939360668E2DF1CAC4AE899 /* ETDCrewApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ETDCrewApp.swift; sourceTree = "<group>"; };
 		7F71646AE7831B0D44C704D1 /* ScheduleSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScheduleSheet.swift; sourceTree = "<group>"; };
 		88DCA59AE60024E4B44A04D9 /* Keychain.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Keychain.swift; sourceTree = "<group>"; };
+		90CE9EE0E73341EFDE1BB489 /* MessageComposer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MessageComposer.swift; sourceTree = "<group>"; };
 		9DA533307689E92DC023EE00 /* PickupListScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PickupListScreen.swift; sourceTree = "<group>"; };
 		B6979B6829B90E71F0CFF771 /* CrewAPI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CrewAPI.swift; sourceTree = "<group>"; };
 		C9E0F7D10A73722B1719591F /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -59,6 +63,7 @@
 			children = (
 				506F2D4CB16EEBB351024D30 /* LoginView.swift */,
 				4B8F5A17C0A1FCED8832178E /* MainView.swift */,
+				90CE9EE0E73341EFDE1BB489 /* MessageComposer.swift */,
 				429520BF9B069DD42EBC8D46 /* PickupDetailView.swift */,
 				9DA533307689E92DC023EE00 /* PickupListScreen.swift */,
 				7F71646AE7831B0D44C704D1 /* ScheduleSheet.swift */,
@@ -84,6 +89,7 @@
 				E8635FDCA7C2206ED2598721 /* CrewStore.swift */,
 				527D707230BA608FC23F3F06 /* DemoData.swift */,
 				88DCA59AE60024E4B44A04D9 /* Keychain.swift */,
+				3E653B06A70720E696E3BE1D /* LocalStore.swift */,
 				166593D7D56979B3F75F4173 /* Pickup.swift */,
 			);
 			path = Model;
@@ -164,8 +170,10 @@
 				34F8CAC821DF11AA4D476F11 /* DemoData.swift in Sources */,
 				897B1A604E5594BB51DF8597 /* ETDCrewApp.swift in Sources */,
 				5A9D1EBFCF3E05FF60FEC7DE /* Keychain.swift in Sources */,
+				BE539C68EF7F8B14F6A481CD /* LocalStore.swift in Sources */,
 				683CF589A036ACDC111110E7 /* LoginView.swift in Sources */,
 				221567053F189D4958F8C21F /* MainView.swift in Sources */,
+				7648460075F6448844E03D11 /* MessageComposer.swift in Sources */,
 				AE27AF6F1F134BE0CACAB5C4 /* Pickup.swift in Sources */,
 				0CDFE59946D2EE1321B4F814 /* PickupDetailView.swift in Sources */,
 				E001AB9BA106FD11DCBD9E81 /* PickupListScreen.swift in Sources */,

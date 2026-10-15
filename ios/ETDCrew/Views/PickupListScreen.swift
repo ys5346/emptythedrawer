@@ -15,10 +15,15 @@ struct PickupListScreen: View {
     var body: some View {
         NavigationStack {
             List {
-                if let error = store.errorMessage {
-                    Label(error, systemImage: "wifi.exclamationmark")
-                        .font(.subheadline)
+                if let notice = store.syncNotice {
+                    Label(notice, systemImage: store.isOffline ? "antenna.radiowaves.left.and.right.slash" : "arrow.triangle.2.circlepath")
+                        .font(.subheadline.weight(.medium))
                         .foregroundStyle(.orange)
+                }
+                if let error = store.errorMessage {
+                    Label(error, systemImage: "exclamationmark.triangle")
+                        .font(.subheadline)
+                        .foregroundStyle(.red)
                 }
                 sections
             }

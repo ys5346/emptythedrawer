@@ -32,10 +32,4 @@ enum DemoData {
         ].enumerated().map { i, p in var p = p; p.bookedIso = String(format: "2026-10-%02dT10:00:00Z", 14 - i); return p })
     }
 
-    static func apply(_ set: [String: String], to code: String, in pickups: inout [Pickup]) {
-        guard let i = pickups.firstIndex(where: { $0.code == code }) else { return }
-        if let date = set["pickupDate"] { pickups[i].pickupDate = date.isEmpty ? nil : date }
-        if let s = set["status"], let status = PickupStatus(rawValue: s) { pickups[i].status = status }
-        if let note = set["crewNote"] { pickups[i].crewNotes += (pickups[i].crewNotes.isEmpty ? "" : "\n") + "Today: " + note }
-    }
 }
