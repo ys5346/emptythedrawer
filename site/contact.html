@@ -3,6 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: https://tile.openstreetmap.org; connect-src 'self' https://script.google.com https://script.googleusercontent.com https://formsubmit.co https://photon.komoot.io; form-action 'self'; base-uri 'self'; object-src 'none'; upgrade-insecure-requests">
+<meta name="referrer" content="strict-origin-when-cross-origin">
 <title>Contact Empty the Drawer — Ask What We Accept</title>
 <meta name="description" content="Not sure if we take it? Call (604) 953-9883, email or WhatsApp us about recycling or donating old electronics in Surrey and Metro Vancouver.">
 <!-- seo -->
@@ -24,9 +26,8 @@
 <!-- /seo -->
 <link rel="icon" href="logo/favicon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="logo/apple-touch-icon.png">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="preload" href="fonts/space-grotesk-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fonts/ibm-plex-sans-latin.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="styles.css">
 <style>
 .contact .subhero .wrap{padding-top:60px;padding-bottom:52px}

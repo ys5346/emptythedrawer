@@ -258,3 +258,8 @@ window.mountManage = (el, opts = {}) => {
   ReactDOM.createRoot(el).render(html`<${Manage} initialCode=${opts.code || ''} />`);
 };
 })();
+
+{
+  const el = document.getElementById('manage');
+  if (el) window.mountManage(el, { code: new URLSearchParams(location.search).get('code') || '' });
+}

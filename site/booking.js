@@ -334,3 +334,8 @@ window.mountBooking = (el, opts = {}) => {
   ReactDOM.createRoot(el).render(html`<${Booking} home=${opts.home || 'index.html'} scrollTarget=${opts.scrollTarget || el} />`);
 };
 })();
+
+{
+  const el = document.getElementById('booking');
+  if (el) window.mountBooking(el, { home: 'index.html' });
+}
