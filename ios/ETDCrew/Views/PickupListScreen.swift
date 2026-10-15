@@ -13,6 +13,7 @@ struct PickupListScreen: View {
     @State private var filter: PickupStatus?
     @State private var pickingUp: Pickup?
     @State private var reordering = false
+    @State private var adding = false
     @State private var path: [String] = []
 
     var body: some View {
@@ -40,6 +41,9 @@ struct PickupListScreen: View {
             .overlay { if store.hasLoaded && items.isEmpty { empty } }
             .overlay { if !store.hasLoaded { ProgressView("Loading pickups…") } }
             .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button { adding = true } label: { Label("New Booking", systemImage: "plus") }
+                }
                 if tab == .today, store.route.count > 1 {
                     ToolbarItem(placement: .topBarTrailing) {
                         Button(reordering ? "Done" : "Reorder") { reordering.toggle() }
@@ -74,6 +78,7 @@ struct PickupListScreen: View {
             }
             .sheet(item: $scheduling) { p in ScheduleSheet(pickup: p) }
             .sheet(item: $pickingUp) { p in PickedUpSheet(pickup: p) }
+            .sheet(isPresented: $adding) { NewBookingSheet() }
             .onChange(of: store.route.count) { _, n in if n < 2 { reordering = false } }
             .alert("Couldn’t pick up?", isPresented: Binding(get: { missing != nil }, set: { if !$0 { missing = nil } })) {
                 TextField("What happened?", text: $missReason)
@@ -247,7 +252,7 @@ struct PickupListScreen: View {
             ContentUnavailableView("Nothing Waiting", systemImage: "shippingbox", description: Text("Picked-up loads show here until they’re recycled at ERA."))
         case .all:
             if search.isEmpty && filter == nil {
-                ContentUnavailableView("No Bookings Yet", systemImage: "list.bullet", description: Text("Bookings from the website show up here."))
+                ContentUnavailableView("No Bookings Yet", systemImage: "list.bullet", description: Text("Bookings from the website show up here. Tap + to add one from somewhere else."))
             } else {
                 ContentUnavailableView.search(text: search)
             }
@@ -314,6 +319,7 @@ struct PickupRow: View {
         }
         if pickup.status == .onTheWay { f.append(("On the way", "location.fill", .purple)) }
         if pickup.latestRequest != nil { f.append(("Customer request", "exclamationmark.bubble.fill", .red)) }
+        if let s = pickup.otherSource, pickup.status.isActive { f.append((s, "tray.and.arrow.down.fill", .indigo)) }
         if !pickup.notes.isEmpty && pickup.status.isActive { f.append(("Driver notes", "note.text", .orange)) }
         if let n = pickup.itemCount, !pickup.status.isActive { f.append(("\(n) collected", "shippingbox.fill", .green)) }
         if pickup.hasPhoto { f.append(("Photo", "camera.fill", .blue)) }

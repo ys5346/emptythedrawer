@@ -138,7 +138,11 @@ final class CrewStore {
         await flushOutbox()
         do {
             var (day, list) = try await CrewAPI(passcode: passcode).list()
-            for change in outbox { list.apply(change.set, to: change.code) }   // keep unsent changes visible
+            for change in outbox {                                           // keep unsent changes visible
+                if change.op == "create", let p = pickups.first(where: { $0.code == change.code }),
+                   !list.contains(where: { $0.code == p.code }) { list.append(p) }
+                list.apply(change.set, to: change.code)
+            }
             if day != today { stopOrder = Self.loadStopOrder(for: day) }
             (today, pickups) = (day, list)
             lastSynced = .now
@@ -161,7 +165,12 @@ final class CrewStore {
         var sent = 0
         while let change = outbox.first {
             do {
-                try await CrewAPI(passcode: passcode).update(code: change.code, set: change.set)
+                let api = CrewAPI(passcode: passcode)
+                if change.op == "create" {
+                    try await api.create(code: change.code, fields: change.set)
+                } else {
+                    try await api.update(code: change.code, set: change.set)
+                }
                 outbox.removeFirst()
                 sent += 1
             } catch CrewAPI.Failure.offline {
@@ -235,6 +244,55 @@ final class CrewStore {
             phone: p.phoneDigits,
             body: "Hi \(p.firstName), it’s Empty the Drawer. We’re a few stops away to pick up your electronics (\(p.code)). Please make sure they’re by the door. Thanks!"
         )
+    }
+
+    /// Adds a booking from Marketplace, WhatsApp, a call… Only what's known is filled in.
+    /// `fields` may hold name, phone, email, address, load, notes, source, pickupDate and sendEmail ("1").
+    @discardableResult
+    func createBooking(_ fields: [String: String]) async -> Bool {
+        guard let passcode else { return false }
+        let code = newCode()
+        let date = fields["pickupDate"].flatMap { $0.isEmpty ? nil : $0 }
+        var p = Pickup(code: code, status: date == nil ? .pending : .scheduled, pickupDate: date,
+                       bookedAt: Date.now.formatted(.dateTime.month(.abbreviated).day().hour().minute()),
+                       name: fields["name"] ?? "", email: fields["email"] ?? "", phone: fields["phone"] ?? "",
+                       address: fields["address"] ?? "", load: fields["load"] ?? "", notes: fields["notes"] ?? "",
+                       requests: "", crewNotes: "")
+        p.bookedIso = ISO8601DateFormatter().string(from: .now)
+        p.source = fields["source"]
+        pickups.append(p)
+        let done = "Booking \(code) added"
+        if isDemo {
+            toast = done
+            return true
+        }
+        do {
+            let notified = try await CrewAPI(passcode: passcode).create(code: code, fields: fields)
+            toast = notified == "email" ? "\(done) · customer emailed" : done
+            isOffline = false
+            await refresh()
+        } catch CrewAPI.Failure.offline {
+            outbox.append(PendingChange(code: code, set: fields, label: "New booking", op: "create"))
+            LocalStore.saveOutbox(outbox)
+            LocalStore.saveList(today: today, pickups: pickups)
+            isOffline = true
+            toast = "\(done) · will sync when there’s signal"
+        } catch {
+            pickups.removeAll { $0.code == code }
+            toast = "Didn’t save. Try again."
+            return false
+        }
+        return true
+    }
+
+    /// Same format as the website's codes (AB12C), without I or O.
+    private func newCode() -> String {
+        let letters = Array("ABCDEFGHJKLMNPQRSTUVWXYZ")
+        while true {
+            let code = String([letters.randomElement()!, letters.randomElement()!]) +
+                String(format: "%02d", Int.random(in: 0...99)) + String(letters.randomElement()!)
+            if !pickups.contains(where: { $0.code == code }) { return code }
+        }
     }
 
     func undoPickup(_ p: Pickup) async {

@@ -81,6 +81,7 @@ struct PickupDetailView: View {
                 }
                 LabeledContent("Confirmation") { Text(p.code).monospaced() }
                 if !p.bookedAt.isEmpty { LabeledContent("Booked", value: p.bookedAt) }
+                if let s = p.otherSource { LabeledContent("Came from", value: s) }
             }
 
             Section {

@@ -54,6 +54,7 @@ struct Pickup: Codable, Identifiable, Hashable {
     var bookedIso: String? = nil    // for sorting newest first
     var itemCount: Int? = nil       // items actually collected, recorded at pickup
     var photoUrl: String? = nil     // Google Drive link to the pickup photo ("pending" until it syncs)
+    var source: String? = nil       // "Website", or where the crew said it came from
 
     var id: String { code }
     var firstName: String { name.split(separator: " ").first.map(String.init) ?? "there" }
@@ -66,6 +67,11 @@ struct Pickup: Codable, Identifiable, Hashable {
         var c = URLComponents(string: "http://maps.apple.com/")!
         c.queryItems = [.init(name: "daddr", value: address), .init(name: "dirflg", value: "d")]
         return c.url!
+    }
+    /// Where a booking came from, when it wasn't the website.
+    var otherSource: String? {
+        guard let source, !source.isEmpty, source != "Website" else { return nil }
+        return source
     }
     var hasPhoto: Bool { !(photoUrl ?? "").isEmpty }
 

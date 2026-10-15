@@ -57,6 +57,14 @@ struct CrewAPI {
         return r.notified ?? "none"
     }
 
+    /// Adds a booking that came in somewhere else. `fields` are all optional.
+    @discardableResult
+    func create(code: String, fields: [String: String]) async throws -> String {
+        let r: Ack = try await post(["op": "create", "code": code, "set": fields])
+        guard r.ok else { throw Failure(code: r.error) }
+        return r.notified ?? "none"
+    }
+
     private func post<T: Decodable>(_ body: [String: Any]) async throws -> T {
         var payload = body
         payload["type"] = "crew"

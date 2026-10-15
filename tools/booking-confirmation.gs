@@ -15,6 +15,8 @@
  *                              their pickup is scheduled and picked up. When marking a
  *                              pickup done, the crew can record how many items were
  *                              collected and a photo, saved to a private Drive folder.
+ *                              The crew can also add bookings that came in elsewhere
+ *                              (Marketplace, WhatsApp, a phone call).
  *
  * The crew passcode lives in Project Settings → Script properties → CREW_PASSCODE.
  * `setup` creates one the first time and prints it in the log.
@@ -50,7 +52,7 @@ const CONFIG = {
   notifyCustomers: true,          // email customers when a pickup is scheduled and when it's picked up
 };
 
-const VERSION = '2026-10-14h';
+const VERSION = '2026-10-14i';
 
 const CODE_RE = /^[A-HJ-NP-Z]{2}\d{2}[A-HJ-NP-Z]$/;
 const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[a-z]{2,}$/i;
@@ -60,9 +62,9 @@ const COL = {
   bookedAt: 'Booked at', code: 'Code', status: 'Status', pickupDate: 'Pickup date',
   name: 'Name', email: 'Email', phone: 'Mobile', address: 'Address', load: 'Load',
   notes: 'Driver notes', requests: 'Customer requests', crewNotes: 'Crew notes',
-  itemCount: 'Items collected', photo: 'Pickup photo',
+  itemCount: 'Items collected', photo: 'Pickup photo', source: 'Source',
 };
-const HEADERS = ['bookedAt', 'code', 'status', 'pickupDate', 'name', 'email', 'phone', 'address', 'load', 'notes', 'requests', 'crewNotes', 'itemCount', 'photo'];
+const HEADERS = ['bookedAt', 'code', 'status', 'pickupDate', 'name', 'email', 'phone', 'address', 'load', 'notes', 'requests', 'crewNotes', 'itemCount', 'photo', 'source'];
 const STATUS_KEYS = { new: 'New', scheduled: 'Scheduled', on_the_way: 'On the way', picked_up: 'Picked up', recycled: 'Recycled', cancelled: 'Cancelled' };
 const STATUSES = ['New', 'Scheduled', 'On the way', 'Picked up', 'Recycled', 'Cancelled'];
 
@@ -133,6 +135,7 @@ function logRow_(b) {
   set('bookedAt', new Date()); set('code', b.code); set('status', 'New'); set('pickupDate', '');
   set('name', b.name); set('email', b.email); set('phone', b.phone); set('address', b.address);
   set('load', b.load); set('notes', b.notes); set('requests', '');
+  if (c.source) set('source', 'Website');
   sh.appendRow(row);
 }
 
@@ -210,6 +213,7 @@ function crew_(d) {
   try {
     if (d.op === 'list') return { ok: true, today: fmt_(new Date(), 'yyyy-MM-dd'), bookings: crewList_() };
     if (d.op === 'update') return crewUpdate_(String(d.code || '').toUpperCase(), d.set || {});
+    if (d.op === 'create') return crewCreate_(String(d.code || '').toUpperCase(), d.set || {});
     return { ok: true };
   } catch (err) {
     recordError_('crew', err);
@@ -257,8 +261,47 @@ function crewList_() {
       crewNotes: String(get('crewNotes') || ''),
       itemCount: Number(get('itemCount')) > 0 ? Number(get('itemCount')) : null,
       photoUrl: String(get('photo') || ''),
+      source: String(get('source') || ''),
     };
   }).filter(b => CODE_RE.test(b.code)).reverse();
+}
+
+/**
+ * A booking that came in somewhere else, added from the crew app. Every field is optional.
+ * The app makes the code (so it works offline); a retry with the same code is ignored.
+ */
+function crewCreate_(code, f) {
+  if (!CODE_RE.test(code)) return { ok: false, error: 'code' };
+  const day = String(f.pickupDate || '');
+  if (day && !/^\d{4}-\d{2}-\d{2}$/.test(day)) return { ok: false, error: 'date' };
+  const sh = sheet_();
+  if (findRow_(sh, code)) return { ok: true, notified: 'none' };
+  const b = {
+    code,
+    name: clip_(f.name, 80), email: clip_(f.email, 120), phone: clip_(f.phone, 30),
+    address: clip_(f.address, 200), load: clip_(f.load, 200), notes: clip_(f.notes, 500),
+    manageUrl: CONFIG.siteUrl + 'manage.html?code=' + code,
+  };
+  const [y, m, dd] = day ? day.split('-').map(Number) : [];
+  const c = columns_(sh);
+  const row = new Array(sh.getLastColumn()).fill('');
+  const put = (k, v) => { if (c[k]) row[c[k] - 1] = v; };
+  put('bookedAt', new Date()); put('code', code); put('status', day ? 'Scheduled' : 'New');
+  put('pickupDate', day ? new Date(y, m - 1, dd, 12) : '');
+  put('name', b.name); put('email', b.email); put('phone', b.phone); put('address', b.address);
+  put('load', b.load); put('notes', b.notes); put('source', clip_(f.source, 40) || 'Crew app');
+  sh.appendRow(row);
+
+  // Email the customer only when the crew asks to: the confirmation, or the pickup date if there is one.
+  let notified = 'none';
+  if (f.sendEmail === '1' && CONFIG.notifyCustomers && EMAIL_RE.test(b.email)) {
+    try {
+      if (day) sendStatusEmail_(Object.assign({ pickupLabel: fmt_(new Date(y, m - 1, dd, 12), 'EEEE, MMMM d') }, b), 'scheduled');
+      else sendConfirmation_(b);
+      notified = 'email';
+    } catch (err) { recordError_('create-email', err); }
+  }
+  return { ok: true, notified };
 }
 
 function crewUpdate_(code, set) {

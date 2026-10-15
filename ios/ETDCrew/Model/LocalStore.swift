@@ -6,6 +6,7 @@ struct PendingChange: Codable, Identifiable {
     let code: String
     let set: [String: String]
     let label: String
+    var op: String? = nil      // "create" for a new booking; nil for a change
 }
 
 /// Saves the last pickup list and any unsent changes on the phone, so the app works with no signal.
