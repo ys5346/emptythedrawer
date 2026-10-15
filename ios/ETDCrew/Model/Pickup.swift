@@ -59,7 +59,29 @@ struct Pickup: Codable, Identifiable, Hashable {
     var id: String { code }
     var firstName: String { name.split(separator: " ").first.map(String.init) ?? "there" }
     var displayName: String { name.isEmpty ? "No name" : name }
-    var latestRequest: String? { requests.split(separator: "\n").last.map(String.init) }
+    /// Requests from the website, newest last: "Oct 13: Reschedule requested — Saturdays — away 20–24".
+    private var requestLines: [(kind: String, detail: String)] {
+        requests.split(separator: "\n").map { line in
+            let body = line.split(separator: ":", maxSplits: 1).last.map { $0.trimmingCharacters(in: .whitespaces) } ?? String(line)
+            let parts = body.components(separatedBy: " — ")
+            return (parts[0], parts.dropFirst().joined(separator: " — "))
+        }
+    }
+    /// Times the customer asked for, while their rescheduled pickup waits for a new day.
+    var preferredTimes: String? {
+        guard status == .pending, let r = requestLines.last, r.kind.hasPrefix("Reschedule"), !r.detail.isEmpty else { return nil }
+        return r.detail
+    }
+    /// Details the customer asked to change (new address, items…), for the driver.
+    var customerUpdate: String? {
+        guard status.isActive, let r = requestLines.last(where: { $0.kind.hasPrefix("Change") }) else { return nil }
+        return r.detail.isEmpty ? "Asked to change their booking. Call them to check." : r.detail
+    }
+    /// Why the customer cancelled, if they did it on the website.
+    var cancelReason: String? {
+        guard status == .cancelled, let r = requestLines.last, r.kind.hasPrefix("Cancel") else { return nil }
+        return r.detail.isEmpty ? "No reason given" : r.detail
+    }
     var latestCrewNote: String? { crewNotes.split(separator: "\n").last.map(String.init) }
     var phoneDigits: String { phone.filter { $0.isNumber || $0 == "+" } }
     /// Driving directions in Apple Maps.

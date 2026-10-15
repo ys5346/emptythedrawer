@@ -28,8 +28,8 @@ const NOTE = {
   change: { title: 'New details', ph: 'e.g. New address is 456 Main St, Unit 2' }
 };
 const DONE = {
-  cancel: ['Cancellation sent', "We'll take you off the truck run and confirm within one business day."],
-  reschedule: ['Request sent', "We'll find a new slot and confirm it within one business day."],
+  cancel: ['Pickup cancelled', "You're off the truck run. Changed your mind? You can book again any time."],
+  reschedule: ['Request sent', "We'll pick a new day that works for you and email you the date."],
   change: ['Changes sent', "We'll update your booking and confirm within one business day."]
 };
 
@@ -206,9 +206,9 @@ function Manage({ initialCode }) {
               <p>${STATUS_TEXT[booking.status][1]}</p>
             </div>
             ${booking.status !== 'cancelled' && html`<${Timeline} booking=${booking} />`}
-            ${booking.lastRequest && html`
+            ${booking.lastRequest && booking.status !== 'cancelled' && html`
               <div class="row static">
-                <div class="row-text"><div class="row-label">Your latest request</div><div class="row-sub">${booking.lastRequest} · we'll confirm by email or text</div></div>
+                <div class="row-text"><div class="row-label">Your latest request</div><div class="row-sub">${booking.lastRequest}${/Reschedule/.test(booking.lastRequest) && booking.status === 'new' ? " · we'll email your new day" : /Change/.test(booking.lastRequest) ? ' · passed on to our driver' : ''}</div></div>
               </div>`}
           <//>
           ${booking.status === 'cancelled' && html`<p class="after-note"><a href="book.html">Book a new pickup</a></p>`}

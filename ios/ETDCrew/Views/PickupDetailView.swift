@@ -52,9 +52,11 @@ struct PickupDetailView: View {
                 .listRowInsets(EdgeInsets())
             }
 
-            if p.latestRequest != nil || !p.notes.isEmpty || p.latestCrewNote != nil {
+            if p.preferredTimes != nil || p.customerUpdate != nil || p.cancelReason != nil || !p.notes.isEmpty || p.latestCrewNote != nil {
                 Section("Notes") {
-                    if let r = p.latestRequest { NoteRow(title: "Customer request", text: r, systemImage: "exclamationmark.bubble.fill", color: .red) }
+                    if let t = p.preferredTimes { NoteRow(title: "Asked to reschedule", text: "Prefers \(t)", systemImage: "calendar.badge.clock", color: .blue) }
+                    if let u = p.customerUpdate { NoteRow(title: "Update from customer", text: u, systemImage: "pencil.line", color: .blue) }
+                    if let c = p.cancelReason { NoteRow(title: "Cancelled by customer", text: c, systemImage: "xmark.circle", color: .secondary) }
                     if !p.notes.isEmpty { NoteRow(title: "Driver notes", text: p.notes, systemImage: "note.text", color: .orange) }
                     if let c = p.latestCrewNote { NoteRow(title: "Crew note", text: c, systemImage: "person.2.fill", color: .secondary) }
                 }

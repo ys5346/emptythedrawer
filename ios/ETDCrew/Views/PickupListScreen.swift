@@ -301,6 +301,27 @@ struct PickupRow: View {
                     .foregroundStyle(.tertiary)
                     .lineLimit(1)
             }
+            if !pickup.notes.isEmpty && pickup.status.isActive {
+                Label(pickup.notes, systemImage: "note.text")
+                    .font(.footnote)
+                    .labelStyle(QuietLabel())
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+            }
+            if let times = pickup.preferredTimes {
+                Label("Prefers \(times)", systemImage: "calendar.badge.clock")
+                    .font(.footnote)
+                    .labelStyle(QuietLabel())
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+            }
+            if let update = pickup.customerUpdate {
+                Label(update, systemImage: "pencil.line")
+                    .font(.footnote)
+                    .labelStyle(QuietLabel())
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+            }
             let flags = flags
             if !flags.isEmpty {
                 HStack(spacing: 6) { ForEach(flags, id: \.0) { Tag(text: $0.0, systemImage: $0.1, color: $0.2) } }
@@ -316,9 +337,7 @@ struct PickupRow: View {
             f.append(("Was due \(date.formatted(.dateTime.month(.abbreviated).day()))", "clock.badge.exclamationmark", .red))
         }
         if pickup.status == .onTheWay { f.append(("On the way", "location.fill", .purple)) }
-        if pickup.latestRequest != nil { f.append(("Customer request", "exclamationmark.bubble.fill", .red)) }
         if let s = pickup.otherSource, pickup.status.isActive { f.append((s, "tray.and.arrow.down.fill", .indigo)) }
-        if !pickup.notes.isEmpty && pickup.status.isActive { f.append(("Driver notes", "note.text", .orange)) }
         if let n = pickup.itemCount, !pickup.status.isActive { f.append(("\(n) collected", "shippingbox.fill", .green)) }
         if pickup.hasPhoto { f.append(("Photo", "camera.fill", .blue)) }
         return f

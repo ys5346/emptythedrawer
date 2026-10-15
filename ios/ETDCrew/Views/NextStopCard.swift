@@ -27,15 +27,15 @@ struct NextStopCard: View {
             .buttonStyle(.plain)
 
             VStack(alignment: .leading, spacing: 14) {
-                if !pickup.notes.isEmpty || pickup.latestRequest != nil {
+                if !pickup.notes.isEmpty || pickup.customerUpdate != nil {
                     VStack(alignment: .leading, spacing: 6) {
                         if !pickup.notes.isEmpty {
                             Label(pickup.notes, systemImage: "note.text")
                                 .foregroundStyle(.secondary)
                         }
-                        if let request = pickup.latestRequest {
-                            Label(request, systemImage: "exclamationmark.bubble")
-                                .foregroundStyle(.red)
+                        if let update = pickup.customerUpdate {
+                            Label(update, systemImage: "pencil.line")
+                                .foregroundStyle(.secondary)
                         }
                     }
                     .font(.subheadline)
@@ -154,7 +154,7 @@ private struct CardAction: View {
 }
 
 /// Icon in a fixed-width column so wrapped lines stay aligned.
-private struct QuietLabel: LabelStyle {
+struct QuietLabel: LabelStyle {
     func makeBody(configuration: Configuration) -> some View {
         HStack(alignment: .firstTextBaseline, spacing: 8) {
             configuration.icon.frame(width: 18)

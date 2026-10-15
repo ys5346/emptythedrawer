@@ -7,8 +7,10 @@
  *   2. Look up      (GET ?action=lookup&code=AB12C) → returns only that booking's
  *                              status and dates for the "Manage your booking" page —
  *                              never the customer's name, address, contact details or items.
- *   3. Request      (POST type=request) → notes a cancel / reschedule / change
- *                              request on the booking's row.
+ *   3. Request      (POST type=request) → acts on a customer's request: a cancel
+ *                              cancels the booking (and emails them), a reschedule clears
+ *                              the pickup day so it goes back to To Schedule, and a change
+ *                              is noted on the row for the crew.
  *   4. Crew app     (POST type=crew + passcode) → lists every pickup with full
  *                              details and updates status, pickup date and crew notes
  *                              for the ETD Crew iPhone app. Customers get an email when
@@ -52,7 +54,7 @@ const CONFIG = {
   notifyCustomers: true,          // email customers when a pickup is scheduled and when it's picked up
 };
 
-const VERSION = '2026-10-14i';
+const VERSION = '2026-10-14j';
 
 const CODE_RE = /^[A-HJ-NP-Z]{2}\d{2}[A-HJ-NP-Z]$/;
 const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[a-z]{2,}$/i;
@@ -202,6 +204,22 @@ function noteRequest_(code, d) {
   const cell = sh.getRange(r, c.requests);
   const prev = String(cell.getValue() || '');
   cell.setValue((prev ? prev + '\n' : '') + line);
+
+  // Act on it while the pickup is still ahead, so nobody has to clear a flag by hand.
+  const v = sh.getRange(r, 1, 1, sh.getLastColumn()).getValues()[0];
+  const get = k => v[c[k] - 1];
+  if (['new', 'scheduled', 'on_the_way'].indexOf(normStatus_(get('status'))) === -1) return;
+  if (d.action === 'cancel') {
+    sh.getRange(r, c.status).setValue('Cancelled');
+    const email = String(get('email') || '');
+    if (CONFIG.notifyCustomers && EMAIL_RE.test(email)) {
+      try { sendStatusEmail_({ code, name: String(get('name') || ''), email }, 'cancelled'); }
+      catch (err) { recordError_('cancel-email', err); }
+    }
+  } else if (d.action === 'reschedule') {
+    sh.getRange(r, c.status).setValue('New');
+    sh.getRange(r, c.pickupDate).clearContent();
+  }
 }
 
 
@@ -540,7 +558,14 @@ Empty the Drawer`;
 function sendStatusEmail_(b, kind) {
   const first = b.name.split(' ')[0] || 'there';
   const manageUrl = CONFIG.siteUrl + 'manage.html?code=' + b.code;
-  const copy = kind === 'on_the_way' ? {
+  const copy = kind === 'cancelled' ? {
+    subject: `Your pickup is cancelled (${b.code})`,
+    title: 'Pickup cancelled',
+    lines: [
+      `We've cancelled your pickup (${b.code}), so the truck won't come by.`,
+      `Changed your mind? You can book again any time at <a href="${CONFIG.siteUrl}book.html" style="color:#0A2E2C">emptythedrawer.org</a>.`,
+    ],
+  } : kind === 'on_the_way' ? {
     subject: `We're on our way (${b.code})`,
     title: "We're on our way",
     lines: [

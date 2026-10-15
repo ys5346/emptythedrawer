@@ -19,6 +19,13 @@ struct ScheduleSheet: View {
                 DatePicker("Pickup day", selection: $date, in: Calendar.current.startOfDay(for: .now)..., displayedComponents: .date)
                     .datePickerStyle(.graphical)
                     .padding(.horizontal)
+                if let times = pickup.preferredTimes {
+                    Label("They asked for \(times)", systemImage: "calendar.badge.clock")
+                        .font(.subheadline.weight(.medium))
+                        .foregroundStyle(.blue)
+                        .padding(.horizontal)
+                        .padding(.top, 4)
+                }
                 Label("\(pickup.displayName) gets an email with this date.", systemImage: "envelope")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
