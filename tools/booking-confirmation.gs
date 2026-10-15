@@ -9,6 +9,13 @@
  *                              never the customer's name, address, contact details or items.
  *   3. Request      (POST type=request) → notes a cancel / reschedule / change
  *                              request on the booking's row.
+ *   4. Crew app     (POST type=crew + passcode) → lists active pickups with full
+ *                              details and updates status, pickup date and crew notes
+ *                              for the crew app at emptythedrawer.org/crew/. Customers
+ *                              get an email when their pickup is scheduled and picked up.
+ *
+ * The crew passcode lives in Project Settings → Script properties → CREW_PASSCODE.
+ * `setup` creates one the first time and prints it in the log.
  *
  * You run pickups from the sheet: set each booking's Status (New, Scheduled,
  * Picked up, Recycled, Cancelled) and its Pickup date. The website shows
@@ -33,9 +40,11 @@ const CONFIG = {
   sheetTab: 'Bookings',
   sheetName: 'Empty the Drawer bookings',
   timeZone: 'America/Vancouver',
+  siteUrl: 'https://emptythedrawer.org/',
+  notifyCustomers: true,          // email customers when a pickup is scheduled and when it's picked up
 };
 
-const VERSION = '2026-10-14d';
+const VERSION = '2026-10-14e';
 
 const CODE_RE = /^[A-HJ-NP-Z]{2}\d{2}[A-HJ-NP-Z]$/;
 const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[a-z]{2,}$/i;
@@ -44,9 +53,10 @@ const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[a-z]{2,}$/i;
 const COL = {
   bookedAt: 'Booked at', code: 'Code', status: 'Status', pickupDate: 'Pickup date',
   name: 'Name', email: 'Email', phone: 'Mobile', address: 'Address', load: 'Load',
-  notes: 'Driver notes', requests: 'Customer requests',
+  notes: 'Driver notes', requests: 'Customer requests', crewNotes: 'Crew notes',
 };
-const HEADERS = ['bookedAt', 'code', 'status', 'pickupDate', 'name', 'email', 'phone', 'address', 'load', 'notes', 'requests'];
+const HEADERS = ['bookedAt', 'code', 'status', 'pickupDate', 'name', 'email', 'phone', 'address', 'load', 'notes', 'requests', 'crewNotes'];
+const STATUS_KEYS = { new: 'New', scheduled: 'Scheduled', picked_up: 'Picked up', recycled: 'Recycled', cancelled: 'Cancelled' };
 const STATUSES = ['New', 'Scheduled', 'Picked up', 'Recycled', 'Cancelled'];
 
 
@@ -56,6 +66,7 @@ function doPost(e) {
   try {
     const d = JSON.parse((e.postData && e.postData.contents) || '{}');
     if (d._honey) return json_({ ok: true });                       // bot filled the hidden field
+    if (d.type === 'crew') return json_(crew_(d));
     const code = String(d.code || '').toUpperCase();
     if (!CODE_RE.test(code)) return json_({ ok: true });
     if (d.type === 'request') {
@@ -183,6 +194,112 @@ function noteRequest_(code, d) {
 }
 
 
+// ---------- crew app ----------
+
+function crew_(d) {
+  const auth = crewAuth_(d.passcode);
+  if (auth !== true) return { ok: false, error: auth };
+  try {
+    if (d.op === 'list') return { ok: true, today: fmt_(new Date(), 'yyyy-MM-dd'), bookings: crewList_() };
+    if (d.op === 'update') return crewUpdate_(String(d.code || '').toUpperCase(), d.set || {});
+    return { ok: true };
+  } catch (err) {
+    recordError_('crew', err);
+    return { ok: false, error: 'server' };
+  }
+}
+
+/** true, or 'passcode' / 'locked' / 'not_set_up'. 20 wrong passcodes lock it for 10 minutes. */
+function crewAuth_(given) {
+  const real = PropertiesService.getScriptProperties().getProperty('CREW_PASSCODE');
+  if (!real) return 'not_set_up';
+  const cache = CacheService.getScriptCache();
+  const key = 'crewfail:' + Math.floor(Date.now() / 600000);
+  const fails = Number(cache.get(key) || 0);
+  if (fails >= 20) return 'locked';
+  if (String(given || '') === real) return true;
+  cache.put(key, String(fails + 1), 900);
+  return 'passcode';
+}
+
+/** Every pickup that still needs something done: New, Scheduled and Picked up. */
+function crewList_() {
+  const sh = sheet_();
+  const last = sh.getLastRow();
+  if (last < 2) return [];
+  const c = columns_(sh);
+  return sh.getRange(2, 1, last - 1, sh.getLastColumn()).getValues().map(v => {
+    const get = k => (c[k] ? v[c[k] - 1] : '');
+    const pickup = get('pickupDate') instanceof Date ? get('pickupDate') : null;
+    let status = normStatus_(get('status'));
+    if (status === 'new' && pickup) status = 'scheduled';
+    return {
+      code: String(get('code')).toUpperCase(),
+      status,
+      pickupDate: pickup ? fmt_(pickup, 'yyyy-MM-dd') : null,
+      bookedAt: get('bookedAt') instanceof Date ? fmt_(get('bookedAt'), 'MMM d, h:mm a') : '',
+      name: String(get('name') || ''),
+      email: String(get('email') || ''),
+      phone: String(get('phone') || ''),
+      address: String(get('address') || ''),
+      load: String(get('load') || ''),
+      notes: String(get('notes') || ''),
+      requests: String(get('requests') || ''),
+      crewNotes: String(get('crewNotes') || ''),
+    };
+  }).filter(b => CODE_RE.test(b.code) && ['new', 'scheduled', 'picked_up'].indexOf(b.status) !== -1);
+}
+
+function crewUpdate_(code, set) {
+  if (!CODE_RE.test(code)) return { ok: false, error: 'code' };
+  const sh = sheet_();
+  const r = findRow_(sh, code);
+  if (!r) return { ok: false, error: 'missing' };
+  const c = columns_(sh);
+  const v = sh.getRange(r, 1, 1, sh.getLastColumn()).getValues()[0];
+  const get = k => v[c[k] - 1];
+  const beforeStatus = normStatus_(get('status'));
+  const beforeDate = get('pickupDate') instanceof Date ? fmt_(get('pickupDate'), 'yyyy-MM-dd') : '';
+  let notify = null;
+
+  if (set.pickupDate !== undefined) {
+    const day = String(set.pickupDate || '');
+    if (day && !/^\d{4}-\d{2}-\d{2}$/.test(day)) return { ok: false, error: 'date' };
+    const cell = sh.getRange(r, c.pickupDate);
+    if (day) {
+      const [y, m, dd] = day.split('-').map(Number);
+      cell.setValue(new Date(y, m - 1, dd, 12));                     // noon, so time zones never shift the day
+      if (day !== beforeDate) notify = 'scheduled';
+    } else {
+      cell.clearContent();
+    }
+  }
+  if (set.status) {
+    const label = STATUS_KEYS[set.status];
+    if (!label) return { ok: false, error: 'status' };
+    sh.getRange(r, c.status).setValue(label);
+    if (set.status === 'picked_up' && beforeStatus !== 'picked_up') notify = 'picked_up';
+    if (set.status !== 'scheduled' && notify === 'scheduled') notify = null;
+  }
+  if (set.crewNote) {
+    const cell = sh.getRange(r, c.crewNotes);
+    const prev = String(cell.getValue() || '');
+    cell.setValue((prev ? prev + '\n' : '') + `${fmt_(new Date(), 'MMM d')}: ${clip_(set.crewNote, 300)}`);
+  }
+
+  if (notify && CONFIG.notifyCustomers && EMAIL_RE.test(String(get('email') || ''))) {
+    try {
+      const day = set.pickupDate ? set.pickupDate.split('-').map(Number) : null;
+      sendStatusEmail_({
+        code, name: String(get('name') || ''), email: String(get('email')),
+        pickupLabel: day ? fmt_(new Date(day[0], day[1] - 1, day[2], 12), 'EEEE, MMMM d') : '',
+      }, notify);
+    } catch (err) { recordError_('status-email', err); }
+  }
+  return { ok: true };
+}
+
+
 // ---------- the sheet ----------
 
 /** The attached spreadsheet's Bookings tab, or a spreadsheet created in Drive on first use. */
@@ -296,11 +413,57 @@ Empty the Drawer`;
   </div>
 </div>`;
 
+  sendMail_(b.email, subject, text, htmlBody);
+}
+
+/** Short update emails sent when the crew schedules a pickup or marks it picked up. */
+function sendStatusEmail_(b, kind) {
+  const first = b.name.split(' ')[0] || 'there';
+  const manageUrl = CONFIG.siteUrl + 'manage.html?code=' + b.code;
+  const copy = kind === 'scheduled' ? {
+    subject: `Your pickup is on ${b.pickupLabel}`,
+    title: `See you ${b.pickupLabel}`,
+    lines: [
+      `Your free pickup (${b.code}) is scheduled for <strong>${b.pickupLabel}</strong>.`,
+      "That morning, leave everything by your door, in your lobby or by the garage. You don't need to be home.",
+      "We'll text you when the truck is a few stops away.",
+    ],
+  } : {
+    subject: `Picked up — thank you! (${b.code})`,
+    title: `Thank you, ${first}`,
+    lines: [
+      `We've picked up your devices (${b.code}).`,
+      "They're going to the Electronic Recycling Association, where every drive is wiped or shredded and what can be fixed is refurbished for charities, schools and care homes.",
+    ],
+  };
+  const text = `Hi ${first},\n\n` + copy.lines.map(l => l.replace(/<[^>]+>/g, '')).join('\n\n') +
+    `\n\nCheck your pickup status: ${manageUrl}\n\nQuestions? Reply to this email or call ${CONFIG.phone}.\n\nEmpty the Drawer`;
+  const htmlBody = `
+<div style="background:#F4EFE4;padding:28px 12px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif">
+  <div style="max-width:520px;margin:0 auto;background:#ffffff;border-radius:14px;overflow:hidden;border:1px solid #e3ddd0">
+    <div style="background:#0A2E2C;padding:22px 26px">
+      <span style="color:#F4EFE4;font-weight:700;font-size:17px;letter-spacing:-.01em">EMPTY THE </span><span style="background:#D8F14A;color:#0A2E2C;font-weight:700;font-size:17px;padding:3px 8px;border-radius:6px">DRAWER</span>
+    </div>
+    <div style="padding:28px 26px 26px">
+      <h1 style="margin:0;font-size:24px;line-height:1.2;color:#0A2E2C">${copy.title}</h1>
+      ${copy.lines.map(l => `<p style="margin:12px 0 0;font-size:15px;line-height:1.55;color:#3d4f4d">${l}</p>`).join('')}
+      <p style="margin:22px 0 0"><a href="${manageUrl}" style="display:inline-block;background:#0A2E2C;color:#ffffff;text-decoration:none;font-weight:600;font-size:15px;padding:12px 20px;border-radius:10px">Check pickup status</a></p>
+    </div>
+    <div style="padding:18px 26px 24px;font-size:13px;line-height:1.55;color:#5b6b69;border-top:1px solid #eee8dc">
+      Questions? Reply to this email or call ${CONFIG.phone}.
+    </div>
+  </div>
+</div>`;
+  sendMail_(b.email, copy.subject, text, htmlBody);
+}
+
+/** Sends as donations@ when that's a Gmail "Send mail as" address, otherwise from the Gmail account. */
+function sendMail_(to, subject, text, htmlBody) {
   const opts = { name: CONFIG.fromName, htmlBody, replyTo: CONFIG.fromAddress };
   if (GmailApp.getAliases().indexOf(CONFIG.fromAddress) !== -1) {
-    GmailApp.sendEmail(b.email, subject, text, { ...opts, from: CONFIG.fromAddress });
+    GmailApp.sendEmail(to, subject, text, { ...opts, from: CONFIG.fromAddress });
   } else {
-    MailApp.sendEmail(b.email, subject, text, opts);
+    MailApp.sendEmail(to, subject, text, opts);
   }
 }
 
@@ -320,6 +483,7 @@ function status_() {
     attachedToSheet: !!SpreadsheetApp.getActiveSpreadsheet(),
     bookingsInSheet: bookings,
     sendAsDonationsReady: sendAsReady,
+    crewPasscodeSet: !!props.getProperty('CREW_PASSCODE'),
     emailsLeftToday: MailApp.getRemainingDailyQuota(),
     lastError: JSON.parse(props.getProperty('LAST_ERROR') || 'null'),
   };
@@ -329,6 +493,11 @@ function status_() {
 function setup() {
   const sh = sheet_();
   formatColumns_(sh);
+  const props = PropertiesService.getScriptProperties();
+  if (!props.getProperty('CREW_PASSCODE')) {
+    props.setProperty('CREW_PASSCODE', String(Math.floor(100000 + Math.random() * 900000)));
+  }
+  console.log('Crew app passcode: ' + props.getProperty('CREW_PASSCODE') + '  (change it in Project Settings → Script properties)');
   console.log('Bookings sheet: ' + sh.getParent().getUrl());
   console.log('Send as ' + CONFIG.fromAddress + ': ' + (GmailApp.getAliases().indexOf(CONFIG.fromAddress) !== -1 ? 'ready' : 'NOT set up in Gmail yet'));
   console.log('Emails left today: ' + MailApp.getRemainingDailyQuota());

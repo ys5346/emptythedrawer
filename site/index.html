@@ -337,10 +337,10 @@
   if (!el) return;
   const load = () => {
     const css = document.createElement('link');
-    css.rel = 'stylesheet'; css.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+    css.rel = 'stylesheet'; css.href = 'vendor/leaflet/leaflet.css';
     document.head.appendChild(css);
     const js = document.createElement('script');
-    js.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+    js.src = 'vendor/leaflet/leaflet.js';
     js.onload = draw;
     document.head.appendChild(js);
   };

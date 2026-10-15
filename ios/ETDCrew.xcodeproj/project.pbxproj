@@ -1,0 +1,376 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		0CDFE59946D2EE1321B4F814 /* PickupDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 429520BF9B069DD42EBC8D46 /* PickupDetailView.swift */; };
+		221567053F189D4958F8C21F /* MainView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B8F5A17C0A1FCED8832178E /* MainView.swift */; };
+		34F8CAC821DF11AA4D476F11 /* DemoData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 527D707230BA608FC23F3F06 /* DemoData.swift */; };
+		5A9D1EBFCF3E05FF60FEC7DE /* Keychain.swift in Sources */ = {isa = PBXBuildFile; fileRef = 88DCA59AE60024E4B44A04D9 /* Keychain.swift */; };
+		683CF589A036ACDC111110E7 /* LoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 506F2D4CB16EEBB351024D30 /* LoginView.swift */; };
+		897B1A604E5594BB51DF8597 /* ETDCrewApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5939360668E2DF1CAC4AE899 /* ETDCrewApp.swift */; };
+		979A7CB145F78715FDDD7C06 /* CrewAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6979B6829B90E71F0CFF771 /* CrewAPI.swift */; };
+		ACC0F6738FBF04BABA85C86E /* ScheduleSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F71646AE7831B0D44C704D1 /* ScheduleSheet.swift */; };
+		AE27AF6F1F134BE0CACAB5C4 /* Pickup.swift in Sources */ = {isa = PBXBuildFile; fileRef = 166593D7D56979B3F75F4173 /* Pickup.swift */; };
+		D30B4CB27EB86B1634978364 /* CrewStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = E8635FDCA7C2206ED2598721 /* CrewStore.swift */; };
+		E001AB9BA106FD11DCBD9E81 /* PickupListScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9DA533307689E92DC023EE00 /* PickupListScreen.swift */; };
+		F1F8C49A2B1C550CCA28712D /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = C9E0F7D10A73722B1719591F /* Assets.xcassets */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		166593D7D56979B3F75F4173 /* Pickup.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Pickup.swift; sourceTree = "<group>"; };
+		19FF52877B2A0223335ED6F1 /* ETDCrew.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = ETDCrew.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		429520BF9B069DD42EBC8D46 /* PickupDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PickupDetailView.swift; sourceTree = "<group>"; };
+		4B8F5A17C0A1FCED8832178E /* MainView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainView.swift; sourceTree = "<group>"; };
+		506F2D4CB16EEBB351024D30 /* LoginView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginView.swift; sourceTree = "<group>"; };
+		527D707230BA608FC23F3F06 /* DemoData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DemoData.swift; sourceTree = "<group>"; };
+		5939360668E2DF1CAC4AE899 /* ETDCrewApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ETDCrewApp.swift; sourceTree = "<group>"; };
+		7F71646AE7831B0D44C704D1 /* ScheduleSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScheduleSheet.swift; sourceTree = "<group>"; };
+		88DCA59AE60024E4B44A04D9 /* Keychain.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Keychain.swift; sourceTree = "<group>"; };
+		9DA533307689E92DC023EE00 /* PickupListScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PickupListScreen.swift; sourceTree = "<group>"; };
+		B6979B6829B90E71F0CFF771 /* CrewAPI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CrewAPI.swift; sourceTree = "<group>"; };
+		C9E0F7D10A73722B1719591F /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		E8635FDCA7C2206ED2598721 /* CrewStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CrewStore.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXGroup section */
+		64D5AEDEBB9624D3A3A7E1A1 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				19FF52877B2A0223335ED6F1 /* ETDCrew.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		7339A677927F6F2B18EBC062 = {
+			isa = PBXGroup;
+			children = (
+				F7144C0927E9BEE2B2C4EE71 /* ETDCrew */,
+				64D5AEDEBB9624D3A3A7E1A1 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		B3D8E6EDBB5A594C918234C1 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				506F2D4CB16EEBB351024D30 /* LoginView.swift */,
+				4B8F5A17C0A1FCED8832178E /* MainView.swift */,
+				429520BF9B069DD42EBC8D46 /* PickupDetailView.swift */,
+				9DA533307689E92DC023EE00 /* PickupListScreen.swift */,
+				7F71646AE7831B0D44C704D1 /* ScheduleSheet.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		F7144C0927E9BEE2B2C4EE71 /* ETDCrew */ = {
+			isa = PBXGroup;
+			children = (
+				C9E0F7D10A73722B1719591F /* Assets.xcassets */,
+				5939360668E2DF1CAC4AE899 /* ETDCrewApp.swift */,
+				FCC784864101B71DEB2660B7 /* Model */,
+				B3D8E6EDBB5A594C918234C1 /* Views */,
+			);
+			path = ETDCrew;
+			sourceTree = "<group>";
+		};
+		FCC784864101B71DEB2660B7 /* Model */ = {
+			isa = PBXGroup;
+			children = (
+				B6979B6829B90E71F0CFF771 /* CrewAPI.swift */,
+				E8635FDCA7C2206ED2598721 /* CrewStore.swift */,
+				527D707230BA608FC23F3F06 /* DemoData.swift */,
+				88DCA59AE60024E4B44A04D9 /* Keychain.swift */,
+				166593D7D56979B3F75F4173 /* Pickup.swift */,
+			);
+			path = Model;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		AEB7AB7219773AF6579E4BBF /* ETDCrew */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 0CADEC65323457E016A45CE4 /* Build configuration list for PBXNativeTarget "ETDCrew" */;
+			buildPhases = (
+				865EF17EC33C7D9CCA42A269 /* Sources */,
+				C579972E07DF81D2D19745AC /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = ETDCrew;
+			packageProductDependencies = (
+			);
+			productName = ETDCrew;
+			productReference = 19FF52877B2A0223335ED6F1 /* ETDCrew.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		D9A65A57D82B577FABD040D3 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1430;
+				TargetAttributes = {
+					AEB7AB7219773AF6579E4BBF = {
+						ProvisioningStyle = Automatic;
+					};
+				};
+			};
+			buildConfigurationList = 727ECEE92FDEC0F5386D5FC3 /* Build configuration list for PBXProject "ETDCrew" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = 7339A677927F6F2B18EBC062;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			productRefGroup = 64D5AEDEBB9624D3A3A7E1A1 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				AEB7AB7219773AF6579E4BBF /* ETDCrew */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		C579972E07DF81D2D19745AC /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				F1F8C49A2B1C550CCA28712D /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		865EF17EC33C7D9CCA42A269 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				979A7CB145F78715FDDD7C06 /* CrewAPI.swift in Sources */,
+				D30B4CB27EB86B1634978364 /* CrewStore.swift in Sources */,
+				34F8CAC821DF11AA4D476F11 /* DemoData.swift in Sources */,
+				897B1A604E5594BB51DF8597 /* ETDCrewApp.swift in Sources */,
+				5A9D1EBFCF3E05FF60FEC7DE /* Keychain.swift in Sources */,
+				683CF589A036ACDC111110E7 /* LoginView.swift in Sources */,
+				221567053F189D4958F8C21F /* MainView.swift in Sources */,
+				AE27AF6F1F134BE0CACAB5C4 /* Pickup.swift in Sources */,
+				0CDFE59946D2EE1321B4F814 /* PickupDetailView.swift in Sources */,
+				E001AB9BA106FD11DCBD9E81 /* PickupListScreen.swift in Sources */,
+				ACC0F6738FBF04BABA85C86E /* ScheduleSheet.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		19DB327656C786B9DB93C3AC /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CODE_SIGN_STYLE = Automatic;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "ETD Crew";
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = UIInterfaceOrientationPortrait;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = org.emptythedrawer.crew;
+				PRODUCT_NAME = ETDCrew;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+		85570876EC9CAE62C2D7DED9 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MARKETING_VERSION = 1.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		BBA7D0DCC57393684D0B4B8B /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CODE_SIGN_STYLE = Automatic;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "ETD Crew";
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = UIInterfaceOrientationPortrait;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = org.emptythedrawer.crew;
+				PRODUCT_NAME = ETDCrew;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
+		};
+		F9F0D24EA4ED9668A13D9CC8 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MARKETING_VERSION = 1.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		0CADEC65323457E016A45CE4 /* Build configuration list for PBXNativeTarget "ETDCrew" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				19DB327656C786B9DB93C3AC /* Debug */,
+				BBA7D0DCC57393684D0B4B8B /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		727ECEE92FDEC0F5386D5FC3 /* Build configuration list for PBXProject "ETDCrew" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				F9F0D24EA4ED9668A13D9CC8 /* Debug */,
+				85570876EC9CAE62C2D7DED9 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = D9A65A57D82B577FABD040D3 /* Project object */;
+}
