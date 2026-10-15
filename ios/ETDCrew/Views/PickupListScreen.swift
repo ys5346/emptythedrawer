@@ -86,18 +86,24 @@ struct PickupListScreen: View {
             if !todays.isEmpty {
                 Section { rows(todays) } header: { Text(Day.date(store.today)?.formatted(.dateTime.weekday(.wide).month(.wide).day()) ?? "Today") }
             }
+            if !store.dueToday.isEmpty {
+                Section {} footer: { SwipeHint(text: "Swipe right on a pickup to mark it picked up. Swipe left to change the day.") }
+            }
         case .upcoming:
             let days = Dictionary(grouping: store.upcoming, by: { $0.pickupDate ?? "" })
             ForEach(days.keys.sorted(), id: \.self) { day in
                 Section(Day.label(day, today: store.today)) { rows(days[day] ?? []) }
             }
+            if !store.upcoming.isEmpty {
+                Section {} footer: { SwipeHint(text: "Swipe right to mark picked up. Swipe left to change the day.") }
+            }
         case .schedule:
             if !store.toSchedule.isEmpty {
-                Section { rows(store.toSchedule) } footer: { Text("Swipe left on a booking to give it a pickup day. The customer gets an email with the date.") }
+                Section { rows(store.toSchedule) } footer: { SwipeHint(text: "Swipe left to give a booking a pickup day. The customer gets an email with the date.") }
             }
         case .pickedUp:
             if !store.pickedUp.isEmpty {
-                Section { rows(store.pickedUp) } footer: { Text("Swipe left to mark a load recycled once it’s dropped off at ERA.") }
+                Section { rows(store.pickedUp) } footer: { SwipeHint(text: "Swipe right to mark a load recycled once it’s dropped off at ERA.") }
             }
         case .all:
             ForEach(PickupStatus.allInOrder, id: \.self) { status in
@@ -123,22 +129,19 @@ struct PickupListScreen: View {
             NavigationLink(value: p.code) {
                 PickupRow(pickup: p, showDate: tab == .today && store.isOverdue(p), showStatus: tab == .all)
             }
-            .swipeActions(edge: .trailing, allowsFullSwipe: true) { trailingActions(p) }
-            .swipeActions(edge: .leading, allowsFullSwipe: false) { leadingActions(p) }
+            .swipeActions(edge: .leading, allowsFullSwipe: true) { forwardAction(p) }
+            .swipeActions(edge: .trailing, allowsFullSwipe: false) { otherActions(p) }
             .disabled(store.savingCode == p.code)
             .opacity(store.savingCode == p.code ? 0.5 : 1)
         }
     }
 
-    /// Swipe left: the main next step for this booking's status.
-    @ViewBuilder private func trailingActions(_ p: Pickup) -> some View {
+    /// Swipe right moves a booking forward. A full swipe does it in one motion.
+    @ViewBuilder private func forwardAction(_ p: Pickup) -> some View {
         switch p.status {
-        case .scheduled:
+        case .pending, .scheduled:
             Button { Task { await store.markPickedUp(p) } } label: { Label("Picked Up", systemImage: "checkmark") }
                 .tint(.green)
-        case .pending:
-            Button { scheduling = p } label: { Label("Schedule", systemImage: "calendar.badge.plus") }
-                .tint(.accentColor)
         case .pickedUp:
             Button { Task { await store.markRecycled(p) } } label: { Label("Recycled", systemImage: "arrow.3.trianglepath") }
                 .tint(.ink)
@@ -148,19 +151,19 @@ struct PickupListScreen: View {
         }
     }
 
-    /// Swipe right: the other common steps.
-    @ViewBuilder private func leadingActions(_ p: Pickup) -> some View {
+    /// Swipe left shows the other options for this booking.
+    @ViewBuilder private func otherActions(_ p: Pickup) -> some View {
         switch p.status {
         case .scheduled:
+            Button { scheduling = p } label: { Label("Date", systemImage: "calendar") }
+                .tint(.indigo)
             if store.isOverdue(p) || p.pickupDate == store.today {
                 Button { missReason = ""; missing = p } label: { Label("Couldn’t", systemImage: "xmark") }
                     .tint(.orange)
             }
-            Button { scheduling = p } label: { Label("Date", systemImage: "calendar") }
-                .tint(.indigo)
         case .pending:
-            Button { Task { await store.markPickedUp(p) } } label: { Label("Picked Up", systemImage: "checkmark") }
-                .tint(.green)
+            Button { scheduling = p } label: { Label("Schedule", systemImage: "calendar.badge.plus") }
+                .tint(.accentColor)
         case .pickedUp:
             Button { Task { await store.undoPickup(p) } } label: { Label("Undo", systemImage: "arrow.uturn.backward") }
                 .tint(.gray)
@@ -288,5 +291,16 @@ struct SearchIfAll: ViewModifier {
         } else {
             content
         }
+    }
+}
+
+
+/// Small reminder of what swiping does, shown under a list.
+struct SwipeHint: View {
+    let text: String
+    var body: some View {
+        Label(text, systemImage: "hand.draw")
+            .font(.footnote)
+            .foregroundStyle(.secondary)
     }
 }
