@@ -2,8 +2,11 @@
  * Empty the Drawer — booking confirmation emails + bookings sheet.
  *
  * The website posts each new booking here. This script:
- *   1. adds a row to the "Bookings" tab of the Google Sheet it's attached to
+ *   1. adds a row to the "Bookings" tab of the bookings Google Sheet
+ *      (the sheet it's attached to, or one it creates in Drive the first time)
  *   2. emails the customer their confirmation number and what happens next
+ *
+ * Opening the web app URL in a browser shows a status check (no personal data).
  *
  * Setup (once):
  *   1. Create a Google Sheet (e.g. "Empty the Drawer bookings").
@@ -24,7 +27,10 @@ const CONFIG = {
   fromAddress: 'donations@emptythedrawer.org',
   phone: '(604) 953-9883',
   sheetTab: 'Bookings',
+  sheetName: 'Empty the Drawer bookings',
 };
+
+const VERSION = '2026-10-14b';
 
 const CODE_RE = /^[A-HJ-NP-Z]{2}\d{2}[A-HJ-NP-Z]$/;
 const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[a-z]{2,}$/i;
@@ -46,25 +52,73 @@ function doPost(e) {
       manageUrl: /^https?:\/\//.test(d.manageUrl || '') ? clip_(d.manageUrl, 300) : '',
     };
 
-    logRow_(b);
+    // Logging and emailing are independent: a problem with one never stops the other.
+    try { logRow_(b); } catch (err) { recordError_('sheet', err); }
 
     // One email per address per 10 minutes, so the endpoint can't be used to spam someone.
     if (EMAIL_RE.test(b.email)) {
       const cache = CacheService.getScriptCache();
       const key = 'sent:' + b.email.toLowerCase();
       if (!cache.get(key)) {
-        cache.put(key, '1', 600);
-        sendConfirmation_(b);
+        try {
+          sendConfirmation_(b);
+          cache.put(key, '1', 600);
+        } catch (err) { recordError_('email', err); }
       }
     }
   } catch (err) {
-    console.error(err);
+    recordError_('request', err);
   }
   return ok_();
 }
 
+/** Status check for whoever maintains the site. Contains no booking data. */
+function doGet() {
+  const props = PropertiesService.getScriptProperties();
+  let sendAsReady = null;
+  try { sendAsReady = GmailApp.getAliases().indexOf(CONFIG.fromAddress) !== -1; } catch (err) { sendAsReady = 'error: ' + err.message; }
+  const status = {
+    ok: true,
+    version: VERSION,
+    attachedToSheet: !!SpreadsheetApp.getActiveSpreadsheet(),
+    createdSheet: !!props.getProperty('SHEET_ID'),
+    sendAsDonationsReady: sendAsReady,
+    emailsLeftToday: MailApp.getRemainingDailyQuota(),
+    lastError: JSON.parse(props.getProperty('LAST_ERROR') || 'null'),
+  };
+  return ContentService.createTextOutput(JSON.stringify(status)).setMimeType(ContentService.MimeType.JSON);
+}
+
+function recordError_(where, err) {
+  console.error(where, err);
+  PropertiesService.getScriptProperties().setProperty('LAST_ERROR',
+    JSON.stringify({ at: new Date().toISOString(), where, message: String(err && err.message || err) }));
+}
+
+/** The attached spreadsheet, or one created in Drive on first use (remembered after that). */
+function bookingsSheet_() {
+  let ss = SpreadsheetApp.getActiveSpreadsheet();
+  if (!ss) {
+    const props = PropertiesService.getScriptProperties();
+    const id = props.getProperty('SHEET_ID');
+    ss = id ? SpreadsheetApp.openById(id) : SpreadsheetApp.create(CONFIG.sheetName);
+    if (!id) props.setProperty('SHEET_ID', ss.getId());
+  }
+  return ss;
+}
+
+/** Run once from the editor: grants every permission the script needs and shows where bookings go. */
+function setup() {
+  const ss = bookingsSheet_();
+  const aliases = GmailApp.getAliases();
+  console.log('Bookings sheet: ' + ss.getUrl());
+  console.log('Send as ' + CONFIG.fromAddress + ': ' + (aliases.indexOf(CONFIG.fromAddress) !== -1 ? 'ready' : 'NOT set up in Gmail yet'));
+  console.log('Emails left today: ' + MailApp.getRemainingDailyQuota());
+  PropertiesService.getScriptProperties().deleteProperty('LAST_ERROR');
+}
+
 function logRow_(b) {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const ss = bookingsSheet_();
   const sh = ss.getSheetByName(CONFIG.sheetTab) || ss.insertSheet(CONFIG.sheetTab);
   if (sh.getLastRow() === 0) {
     sh.appendRow(['Booked at', 'Code', 'Name', 'Email', 'Mobile', 'Address', 'Load', 'Driver notes', 'Status']);
