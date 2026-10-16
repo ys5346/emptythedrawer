@@ -73,6 +73,10 @@ struct NextStopCard: View {
             HStack(spacing: 6) {
                 Text(overdue ? "OVERDUE" : "NEXT STOP")
                     .foregroundStyle(overdue ? .red : .secondary)
+                if let time = pickup.timeLabel {
+                    Text("·").foregroundStyle(.tertiary)
+                    Text(time.uppercased()).foregroundStyle(.tint)
+                }
                 if pickup.status == .onTheWay {
                     Text("·").foregroundStyle(.tertiary)
                     Text("ON THE WAY").foregroundStyle(.purple)

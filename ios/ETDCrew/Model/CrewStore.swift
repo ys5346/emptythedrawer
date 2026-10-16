@@ -260,6 +260,7 @@ final class CrewStore {
                        requests: "", crewNotes: "")
         p.bookedIso = ISO8601DateFormatter().string(from: .now)
         p.source = fields["source"]
+        p.pickupTime = date == nil ? nil : fields["pickupTime"]
         pickups.append(p)
         let done = "Booking \(code) added"
         if isDemo {
@@ -313,10 +314,13 @@ final class CrewStore {
         guard !text.isEmpty else { return }
         await update(p, set: ["crewNote": text], done: "Note added")
     }
-    func schedule(_ p: Pickup, on date: Date) async -> Bool {
+    /// `time` is optional free text ("Morning", "2–4 PM"); empty means just the day.
+    func schedule(_ p: Pickup, on date: Date, time: String = "") async -> Bool {
         let iso = Day.iso(date)
-        return await update(p, set: ["pickupDate": iso, "status": "scheduled"],
-                            done: "Scheduled for \(Day.label(iso, today: today))", tell: true) != nil
+        let time = time.trimmingCharacters(in: .whitespaces)
+        let when = Day.label(iso, today: today) + (time.isEmpty ? "" : ", \(time)")
+        return await update(p, set: ["pickupDate": iso, "pickupTime": time, "status": "scheduled"],
+                            done: "Scheduled for \(when)", tell: true) != nil
     }
     func missed(_ p: Pickup, reason: String) async {
         let why = reason.trimmingCharacters(in: .whitespaces).isEmpty ? "no reason given" : reason

@@ -54,7 +54,7 @@ const CONFIG = {
   notifyCustomers: true,          // email customers when a pickup is scheduled and when it's picked up
 };
 
-const VERSION = '2026-10-14j';
+const VERSION = '2026-10-15a';
 
 const CODE_RE = /^[A-HJ-NP-Z]{2}\d{2}[A-HJ-NP-Z]$/;
 const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[a-z]{2,}$/i;
@@ -65,8 +65,9 @@ const COL = {
   name: 'Name', email: 'Email', phone: 'Mobile', address: 'Address', load: 'Load',
   notes: 'Driver notes', requests: 'Customer requests', crewNotes: 'Crew notes',
   itemCount: 'Items collected', photo: 'Pickup photo', source: 'Source',
+  pickupTime: 'Pickup time',
 };
-const HEADERS = ['bookedAt', 'code', 'status', 'pickupDate', 'name', 'email', 'phone', 'address', 'load', 'notes', 'requests', 'crewNotes', 'itemCount', 'photo', 'source'];
+const HEADERS = ['bookedAt', 'code', 'status', 'pickupDate', 'name', 'email', 'phone', 'address', 'load', 'notes', 'requests', 'crewNotes', 'itemCount', 'photo', 'source', 'pickupTime'];
 const STATUS_KEYS = { new: 'New', scheduled: 'Scheduled', on_the_way: 'On the way', picked_up: 'Picked up', recycled: 'Recycled', cancelled: 'Cancelled' };
 const STATUSES = ['New', 'Scheduled', 'On the way', 'Picked up', 'Recycled', 'Cancelled'];
 
@@ -174,6 +175,7 @@ function lookup_(code) {
     status,                                                          // new | scheduled | on_the_way | picked_up | recycled | cancelled
     pickupDate: pickup ? fmt_(pickup, 'yyyy-MM-dd') : null,
     pickupLabel: pickup ? fmt_(pickup, 'EEEE, MMMM d') : null,
+    pickupTime: pickup && c.pickupTime ? clip_(get('pickupTime'), 40) || null : null,
     bookedLabel: booked ? fmt_(booked, 'MMMM d') : null,
     // e.g. "Oct 14: Cancel requested" — the request type and date, never what they wrote.
     lastRequest: requests.length ? requests[requests.length - 1].split(' — ')[0] : null,
@@ -219,6 +221,7 @@ function noteRequest_(code, d) {
   } else if (d.action === 'reschedule') {
     sh.getRange(r, c.status).setValue('New');
     sh.getRange(r, c.pickupDate).clearContent();
+    if (c.pickupTime) sh.getRange(r, c.pickupTime).clearContent();
   }
 }
 
@@ -280,6 +283,7 @@ function crewList_() {
       itemCount: Number(get('itemCount')) > 0 ? Number(get('itemCount')) : null,
       photoUrl: String(get('photo') || ''),
       source: String(get('source') || ''),
+      pickupTime: String(get('pickupTime') || ''),
     };
   }).filter(b => CODE_RE.test(b.code)).reverse();
 }
@@ -306,6 +310,8 @@ function crewCreate_(code, f) {
   const put = (k, v) => { if (c[k]) row[c[k] - 1] = v; };
   put('bookedAt', new Date()); put('code', code); put('status', day ? 'Scheduled' : 'New');
   put('pickupDate', day ? new Date(y, m - 1, dd, 12) : '');
+  const time = day ? clip_(f.pickupTime, 40) : '';
+  put('pickupTime', time);
   put('name', b.name); put('email', b.email); put('phone', b.phone); put('address', b.address);
   put('load', b.load); put('notes', b.notes); put('source', clip_(f.source, 40) || 'Crew app');
   sh.appendRow(row);
@@ -314,7 +320,7 @@ function crewCreate_(code, f) {
   let notified = 'none';
   if (f.sendEmail === '1' && CONFIG.notifyCustomers && EMAIL_RE.test(b.email)) {
     try {
-      if (day) sendStatusEmail_(Object.assign({ pickupLabel: fmt_(new Date(y, m - 1, dd, 12), 'EEEE, MMMM d') }, b), 'scheduled');
+      if (day) sendStatusEmail_(Object.assign({ pickupLabel: fmt_(new Date(y, m - 1, dd, 12), 'EEEE, MMMM d'), pickupTime: time }, b), 'scheduled');
       else sendConfirmation_(b);
       notified = 'email';
     } catch (err) { recordError_('create-email', err); }
@@ -332,6 +338,8 @@ function crewUpdate_(code, set) {
   const get = k => v[c[k] - 1];
   const beforeStatus = normStatus_(get('status'));
   const beforeDate = get('pickupDate') instanceof Date ? fmt_(get('pickupDate'), 'yyyy-MM-dd') : '';
+  const beforeTime = c.pickupTime ? String(get('pickupTime') || '') : '';
+  let afterTime = beforeTime;
   let notify = null;
 
   if (set.pickupDate !== undefined) {
@@ -344,7 +352,15 @@ function crewUpdate_(code, set) {
       if (day !== beforeDate) notify = 'scheduled';
     } else {
       cell.clearContent();
+      if (c.pickupTime) sh.getRange(r, c.pickupTime).clearContent();   // no day, no time
+      afterTime = '';
     }
+  }
+  if (set.pickupTime !== undefined && c.pickupTime) {
+    afterTime = clip_(set.pickupTime, 40);
+    sh.getRange(r, c.pickupTime).setValue(afterTime);
+    // A new time on the same day is still news for the customer.
+    if (afterTime !== beforeTime && (set.pickupDate || beforeDate) && !notify) notify = 'scheduled';
   }
   if (set.status) {
     const label = STATUS_KEYS[set.status];
@@ -386,10 +402,11 @@ function crewUpdate_(code, set) {
     }
     if (notified === 'none' && EMAIL_RE.test(String(get('email') || ''))) {
       try {
-        const day = set.pickupDate ? set.pickupDate.split('-').map(Number) : null;
+        const day = (set.pickupDate || beforeDate) ? (set.pickupDate || beforeDate).split('-').map(Number) : null;
         sendStatusEmail_({
           code, name, email: String(get('email')),
           pickupLabel: day ? fmt_(new Date(day[0], day[1] - 1, day[2], 12), 'EEEE, MMMM d') : '',
+          pickupTime: afterTime,
           itemCount: parseInt(set.itemCount, 10) || 0,
         }, notify);
         notified = 'email';
@@ -573,11 +590,13 @@ function sendStatusEmail_(b, kind) {
       "Please make sure everything is by your door, in your lobby or by the garage. You don't need to be home.",
     ],
   } : kind === 'scheduled' ? {
-    subject: `Your pickup is on ${b.pickupLabel}`,
+    subject: `Your pickup is on ${b.pickupLabel}${b.pickupTime ? ', ' + b.pickupTime : ''}`,
     title: `See you ${b.pickupLabel}`,
     lines: [
-      `Your free pickup (${b.code}) is scheduled for <strong>${b.pickupLabel}</strong>.`,
-      "That morning, leave everything by your door, in your lobby or by the garage. You don't need to be home.",
+      `Your free pickup (${b.code}) is scheduled for <strong>${b.pickupLabel}${b.pickupTime ? ', ' + esc_(b.pickupTime) : ''}</strong>.`,
+      b.pickupTime
+        ? "Before then, leave everything by your door, in your lobby or by the garage. You don't need to be home."
+        : "That morning, leave everything by your door, in your lobby or by the garage. You don't need to be home.",
       "We'll text you when the truck is a few stops away.",
     ],
   } : {
@@ -678,6 +697,7 @@ function recordError_(where, err) {
     JSON.stringify({ at: new Date().toISOString(), where, message: String(err && err.message || err) }));
 }
 
+function esc_(v) { return String(v).replace(/[&<>"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch])); }
 function fmt_(d, pattern) { return Utilities.formatDate(d, CONFIG.timeZone, pattern); }
 function clip_(v, n) { return String(v == null ? '' : v).slice(0, n).trim(); }
 function json_(o) { return ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON); }

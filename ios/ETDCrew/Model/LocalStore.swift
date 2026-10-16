@@ -61,7 +61,11 @@ extension Array where Element == Pickup {
     /// Applies a change locally, the same way the sheet will.
     mutating func apply(_ set: [String: String], to code: String) {
         guard let i = firstIndex(where: { $0.code == code }) else { return }
-        if let date = set["pickupDate"] { self[i].pickupDate = date.isEmpty ? nil : date }
+        if let date = set["pickupDate"] {
+            self[i].pickupDate = date.isEmpty ? nil : date
+            if date.isEmpty { self[i].pickupTime = nil }
+        }
+        if let time = set["pickupTime"] { self[i].pickupTime = time.isEmpty ? nil : time }
         if let s = set["status"], let status = PickupStatus(rawValue: s) { self[i].status = status }
         if let n = set["itemCount"] { self[i].itemCount = Int(n) }
         if let photo = set["photo"], !photo.isEmpty { self[i].photoUrl = "pending" }

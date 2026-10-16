@@ -15,6 +15,7 @@ struct NewBookingSheet: View {
     @State private var source = "Marketplace"
     @State private var hasDate = true
     @State private var date = Date.now
+    @State private var time = ""
     @State private var sendEmail = true
     @State private var saving = false
     @FocusState private var addressFocused: Bool
@@ -73,6 +74,7 @@ struct NewBookingSheet: View {
                     Toggle("Pickup day", isOn: $hasDate.animation())
                     if hasDate {
                         DatePicker("Day", selection: $date, in: Calendar.current.startOfDay(for: .now)..., displayedComponents: .date)
+                        PickupTimeField(time: $time)
                     }
                     TextField("Notes (buzzer, gate, where it’s left)", text: $notes, axis: .vertical)
                 }
@@ -115,7 +117,11 @@ struct NewBookingSheet: View {
             let v = clean(value)
             if !v.isEmpty { fields[key] = v }
         }
-        if hasDate { fields["pickupDate"] = Day.iso(date) }
+        if hasDate {
+            fields["pickupDate"] = Day.iso(date)
+            let t = clean(time)
+            if !t.isEmpty { fields["pickupTime"] = t }
+        }
         if emailIsValid && sendEmail { fields["sendEmail"] = "1" }
         saving = true
         Task {

@@ -66,7 +66,7 @@ struct PickupDetailView: View {
                 LabeledContent("Status") { StatusPill(status: p.status, overdue: store.isOverdue(p)) }
                 Button { scheduling = true } label: {
                     LabeledContent("Pickup day") {
-                        Text(p.pickupDate.map { Day.label($0, today: store.today) } ?? "Not scheduled")
+                        Text(p.pickupDate.map { Day.label($0, today: store.today) + (p.timeLabel.map { ", \($0)" } ?? "") } ?? "Not scheduled")
                             .foregroundStyle(p.pickupDate == nil && p.status == .pending ? .orange : .secondary)
                     }
                 }

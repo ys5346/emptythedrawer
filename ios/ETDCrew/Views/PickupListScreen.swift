@@ -285,6 +285,10 @@ struct PickupRow: View {
                 Spacer()
                 if showStatus {
                     StatusPill(status: pickup.status)
+                } else if let time = pickup.timeLabel, pickup.status.isActive {
+                    Text(time)
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(.tint)
                 } else {
                     Text(pickup.code)
                         .font(.caption.weight(.semibold).monospaced())

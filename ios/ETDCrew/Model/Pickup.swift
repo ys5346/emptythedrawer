@@ -42,6 +42,7 @@ struct Pickup: Codable, Identifiable, Hashable {
     let code: String
     var status: PickupStatus
     var pickupDate: String?          // yyyy-MM-dd
+    var pickupTime: String? = nil    // optional, free text: "Morning", "2–4 PM"
     let bookedAt: String
     let name: String
     let email: String
@@ -95,6 +96,8 @@ struct Pickup: Codable, Identifiable, Hashable {
         guard let source, !source.isEmpty, source != "Website" else { return nil }
         return source
     }
+    /// "9–12" or nil when only the day is set.
+    var timeLabel: String? { (pickupTime ?? "").isEmpty ? nil : pickupTime }
     var hasPhoto: Bool { !(photoUrl ?? "").isEmpty }
 
     /// Items the customer said they had ("3 items — Laptops" → 3), as the starting count at pickup.

@@ -83,7 +83,7 @@ function Timeline({ booking }) {
         const state = i < at ? 'done' : i === at ? 'now' : 'next';
         let sub = '';
         if (s.key === 'new' && booking.bookedLabel) sub = booking.bookedLabel;
-        if (s.key === 'scheduled') sub = booking.pickupLabel || (i >= at ? 'We\u2019ll confirm your day' : '');
+        if (s.key === 'scheduled') sub = booking.pickupLabel ? booking.pickupLabel + (booking.pickupTime ? ', ' + booking.pickupTime : '') : (i >= at ? 'We\u2019ll confirm your day' : '');
         return html`
           <li key=${s.key} class=${'tl-step ' + state}>
             <span class="tl-dot">${state === 'done' && CHECK}</span>
@@ -147,7 +147,7 @@ function Manage({ initialCode }) {
       'Details': note.trim() || '—'
     };
     if (booking) {
-      fields['Booking status'] = [STATUS_TEXT[booking.status][0], booking.pickupLabel && 'pickup ' + booking.pickupLabel].filter(Boolean).join(' · ');
+      fields['Booking status'] = [STATUS_TEXT[booking.status][0], booking.pickupLabel && 'pickup ' + booking.pickupLabel + (booking.pickupTime ? ', ' + booking.pickupTime : '')].filter(Boolean).join(' · ');
     } else {
       fields['Booking status'] = "Couldn't check the bookings sheet — look it up by code";
     }
